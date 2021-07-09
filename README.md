@@ -17,3 +17,9 @@ Params:
 6. 'caCertPassword': Ca Cert password related for security purposes, default is *a random string* 
 7. 'CA_ORG': this gives the remaining parameters for the CA cert config, <br>
     > estructure **MUST BE LIKE** (default value): '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net'
+
+    O: organization
+
+
+example:
+>source ./config.sh dev mqttDesa '' host 10.0.0.10 '' '/O=kathevigs/OU=generate-CA/emailAddress=kathesama@gmail.com'

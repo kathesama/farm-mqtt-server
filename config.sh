@@ -33,4 +33,4 @@ sudo apt-get install mosquitto mosquitto-clients -y
 printf '\e[1;32m%-6s\e[m' "2 Configuring certs..."
 chmod 700 ca_certificates
 cd ca_certificates
-source ./ca_certificates.sh $P_OPTION $P_HOSTNAME $P_CA_KEY $P_CA_ORG
+source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_KEY $P_CA_ORG
