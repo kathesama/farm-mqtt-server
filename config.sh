@@ -30,6 +30,7 @@ echo ""
 
 docker pull eclipse-mosquitto:latest
 sudo apt-get install mosquitto mosquitto-clients -y
+echo "1: done"
 
 printf '\e[1;32m%-6s\e[m' "2 Configuring certs..."
 echo ""
@@ -38,8 +39,11 @@ cd ca_certificates
 source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_KEY $P_CA_ORG
 sudo mv "$P_HOSTNAME.crt" "$P_HOSTNAME.key" mqtt_certs/
 cd ..
+echo "2: done"
 
 printf '\e[1;32m%-6s\e[m' "3 Configuring config file..."
 echo ""
 cd config
-sed -i 's/SERVER_NAME/$P_HOSTNAME/g' mosquitto.conf
+sed -i "s/SERVER_NAME/{$P_HOSTNAME}/g" mosquitto.conf
+cd ..
+echo "3: done"
