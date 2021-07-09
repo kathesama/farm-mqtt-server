@@ -26,6 +26,7 @@ printf "\n"
 printf '\e[1;31m%-6s\e[m' "Proceding to config: [$1]..."
 printf "\n"
 printf '\e[1;32m%-6s\e[m' "1 Getting mosquitto image if it not exists..."
+echo ""
 
 docker pull eclipse-mosquitto:latest
 sudo apt-get install mosquitto mosquitto-clients -y
@@ -34,3 +35,4 @@ printf '\e[1;32m%-6s\e[m' "2 Configuring certs..."
 chmod 700 ca_certificates
 cd ca_certificates
 source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_KEY $P_CA_ORG
+cd ..
