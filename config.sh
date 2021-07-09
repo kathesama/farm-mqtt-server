@@ -38,3 +38,8 @@ cd ca_certificates
 source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_KEY $P_CA_ORG
 sudo mv "$P_HOSTNAME.crt" "$P_HOSTNAME.key" mqtt_certs/
 cd ..
+
+printf '\e[1;32m%-6s\e[m' "3 Configuring config file..."
+echo ""
+cd config
+sed -i 's/SERVER_NAME/$P_HOSTNAME/g' mosquitto.conf
