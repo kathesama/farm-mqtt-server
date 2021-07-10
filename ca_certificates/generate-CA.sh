@@ -318,8 +318,8 @@ else
 		rm -f $CNF
 		chmod 444 $CLIENT.crt
 
-		echo "--- moving client certs"		
-		mkdir client_certs/"$CLIENT"		
-		mv $CLIENT.csr $CACERT.crt $CACERT.key client_certs/"$CLIENT"
+		echo "--- moving client certs"
+		# mkdir client_certs/"$CLIENT"
+		# mv $CLIENT.csr $CACERT.crt $CACERT.key client_certs/"$CLIENT"
 	fi
 fi

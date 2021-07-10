@@ -25,20 +25,21 @@ echo "----------"
 printf "\n"
 printf '\e[1;31m%-6s\e[m' "Proceding to config: [$1]..."
 printf "\n"
-printf '\e[1;32m%-6s\e[m' "1 Getting mosquitto image if it not exists..."
-echo ""
 
-docker pull eclipse-mosquitto:latest
-sudo apt-get install mosquitto mosquitto-clients -y
-echo "1: done"
-
-printf '\e[1;32m%-6s\e[m' "2 Configuring certs..."
+printf '\e[1;32m%-6s\e[m' "1 Configuring certs..."
 echo ""
 chmod 700 ca_certificates
 cd ca_certificates
 source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_KEY $P_CA_ORG
 sudo mv "$P_HOSTNAME.crt" "$P_HOSTNAME.key" mqtt_certs/
 cd ..
+echo "1: done"
+
+printf '\e[1;32m%-6s\e[m' "2 Getting mosquitto image if it not exists..."
+echo ""
+
+docker pull eclipse-mosquitto:latest
+sudo apt-get install mosquitto mosquitto-clients -y
 echo "2: done"
 
 printf '\e[1;32m%-6s\e[m' "3 Configuring config file..."
