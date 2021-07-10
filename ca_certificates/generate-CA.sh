@@ -190,7 +190,7 @@ if [ $kind == 'server' ]; then
 	echo "  |____/ \___|_|    \_/ \___|_|   "
 	echo "                                  "
 
-	if [ ! -f $SERVER.key ]; then
+	if [ ! -f "server_certs/$SERVER.key" ]; then
 		printf '\e[1;32m%-6s\e[m' "No $SERVER.key, generating..."
 		echo ""
 
@@ -203,13 +203,13 @@ if [ $kind == 'server' ]; then
 		chmod 400 $SERVER.key
 		chown $MOSQUITTOUSER $SERVER.key
 	else
-		printf '\e[1;32m%-6s\e[m' "$SERVER.key, OK..."
+		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.key, OK..."
 		echo ""
 	fi
 
-	if [ -f $SERVER.csr -a ! -f $SERVER.crt ]; then
+	if [ -f "server_certs/$SERVER.csr" -a ! -f "server_certs/$SERVER.crt" ]; then
 
-		printf '\e[1;32m%-6s\e[m' "$SERVER.csr OK but No $SERVER.crt, generating crt..."
+		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.csr OK but No server_certs/$SERVER.crt, generating crt..."
 		echo ""
 
 		# There's no way to pass subjAltName on the CLI so
@@ -262,7 +262,7 @@ if [ $kind == 'server' ]; then
 		chmod 444 $SERVER.crt
 		chown $MOSQUITTOUSER $SERVER.crt
 	else
-		printf '\e[1;32m%-6s\e[m' "$SERVER.csr OK, $SERVER.crt,OK..."
+		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.csr OK, server_certs/$SERVER.crt,OK..."
 		echo ""
 	fi
 else
@@ -273,7 +273,7 @@ else
 	echo "   \____|_|_|\___|_| |_|\__|"
 	echo "                            "
 
-	if [ ! -f $CLIENT.key ]; then
+	if [ ! -f "client_certs/$CLIENT/$CLIENT.key" ]; then
 		printf '\e[1;32m%-6s\e[m' "No $CLIENT.key, generating..."
 		echo ""
 
@@ -306,9 +306,9 @@ else
 	  echo ""
 	fi
 
-	if [ -f $CLIENT.csr -a ! -f $CLIENT.crt ]; then
+	if [ -f "client_certs/$CLIENT/$CLIENT.csr" -a ! -f "client_certs/$CLIENT/$CLIENT.crt" ]; then
 
-		printf '\e[1;32m%-6s\e[m' "$CLIENT.csr OK but No $CLIENT.crt, generating crt..."
+		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.csr OK but No client_certs/$CLIENT/$CLIENT.crt, generating crt..."
 		echo ""
 
 		CNF=`mktemp /tmp/cacnf-cli.XXXXXXXX` || { echo "$0: can't create temp file" >&2; exit 1; }
@@ -347,7 +347,7 @@ else
         mkdir client_certs/"$CLIENT"
         mv $CLIENT.csr $CLIENT.crt $CLIENT.key client_certs/"$CLIENT"
 	else
-		printf '\e[1;32m%-6s\e[m' "$CLIENT.csr OK, $CLIENT.crt,OK..."
+		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.csr OK, client_certs/$CLIENT/$CLIENT.crt,OK..."
 		echo ""
 	fi
 fi

@@ -31,7 +31,7 @@ echo ""
 chmod 700 ca_certificates
 cd ca_certificates
 source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_KEY $P_CA_ORG
-sudo mv "$P_HOSTNAME.crt" "$P_HOSTNAME.key" mqtt_certs/
+sudo mv "$P_HOSTNAME.crt" "$P_HOSTNAME.key" server_certs/
 cd ..
 echo "1: done"
 
