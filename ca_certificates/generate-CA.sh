@@ -62,7 +62,7 @@ echo "$P_CA_KEY"
 echo "CA_ORG values got: $CA_ORG"
 
 if [[ $P_OPTION == "host" ]]; then
-  	kind=server	
+  	kind=server
 	host=$P_HOSTNAME
 else
 	kind=client
@@ -77,7 +77,7 @@ fi
 # 	fi
 # else
 # 	kind=client
-# 	CLIENT="$2"	
+# 	CLIENT="$2"
 # fi
 
 [ -z "$USER" ] && USER=root
@@ -151,12 +151,12 @@ fi
 
 if [ ! -f $CACERT.crt ]; then
 
-	#    ____    _    
-	#   / ___|  / \   
-	#  | |     / _ \  
-	#  | |___ / ___ \ 
-	#   \____/_/   \_\
-	#                 
+echo "   ____    _      "
+echo "  / ___|  / \     "
+echo " | |     / _ \    "
+echo " | |___ / ___ \   "
+echo "  \____/_/   \_\  "
+echo "                  "
 
 	# Create un-encrypted (!) key
 	#$openssl req -newkey rsa:${keybits} -x509 -nodes $defaultmd -days $days -extensions v3_ca -keyout $CACERT.key -out $CACERT.crt -subj "${CA_DN}"
@@ -179,12 +179,12 @@ fi
 
 if [ $kind == 'server' ]; then
 
-	#   ____                           
-	#  / ___|  ___ _ ____   _____ _ __ 
-	#  \___ \ / _ \ '__\ \ / / _ \ '__|
-	#   ___) |  __/ |   \ V /  __/ |   
-	#  |____/ \___|_|    \_/ \___|_|   
-	#                                  
+echo "   ____                           "
+echo "  / ___|  ___ _ ____   _____ _ __ "
+echo "  \___ \ / _ \ '__\ \ / / _ \ '__|"
+echo "   ___) |  __/ |   \ V /  __/ |   "
+echo "  |____/ \___|_|    \_/ \___|_|   "
+echo "                                  "
 
 	if [ ! -f $SERVER.key ]; then
 		echo "--- Creating server key and signing request"
@@ -250,12 +250,12 @@ if [ $kind == 'server' ]; then
 		chown $MOSQUITTOUSER $SERVER.crt
 	fi
 else
-	#    ____ _ _            _   
-	#   / ___| (_) ___ _ __ | |_ 
-	#  | |   | | |/ _ \ '_ \| __|
-	#  | |___| | |  __/ | | | |_ 
-	#   \____|_|_|\___|_| |_|\__|
-	#                            
+echo "    ____ _ _            _   "
+echo "   / ___| (_) ___ _ __ | |_ "
+echo "  | |   | | |/ _ \ '_ \| __|"
+echo "  | |___| | |  __/ | | | |_ "
+echo "   \____|_|_|\___|_| |_|\__|"
+echo "                            "
 
 	if [ ! -f $CLIENT.key ]; then
 		echo "--- Creating client key and signing request"
@@ -276,7 +276,7 @@ else
 		%%% # CN                      = Katherine Aguirre
 		%%% CN                        = $CLIENT
 		%%% # emailAddress            = $CLIENT
-!ENDClientconfigREQ	 	
+!ENDClientconfigREQ
 		$openssl req -new $defaultmd \
 			-key $CLIENT.key \
 			-out $CLIENT.csr \

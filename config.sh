@@ -35,16 +35,16 @@ sudo mv "$P_HOSTNAME.crt" "$P_HOSTNAME.key" mqtt_certs/
 cd ..
 echo "1: done"
 
-printf '\e[1;32m%-6s\e[m' "2 Getting mosquitto image if it not exists..."
-echo ""
-
-docker pull eclipse-mosquitto:latest
-sudo apt-get install mosquitto mosquitto-clients -y
-echo "2: done"
-
-printf '\e[1;32m%-6s\e[m' "3 Configuring config file..."
+printf '\e[1;32m%-6s\e[m' "2 Configuring config file..."
 echo ""
 cd config.d
 sed -i "s/SERVER_NAME/$P_HOSTNAME/g" mosquitto.conf
 cd ..
+echo "2: done"
+
+printf '\e[1;32m%-6s\e[m' "3 Getting mosquitto image if it not exists..."
+echo ""
+
+#docker pull eclipse-mosquitto:latest
+#sudo apt-get install mosquitto mosquitto-clients -y
 echo "3: done"

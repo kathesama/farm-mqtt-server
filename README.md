@@ -23,3 +23,6 @@ Params:
 
 example:
 >source ./config.sh desa mqttDesa '' host srv-pi-desa '' '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=kathevigs/OU=generate-CA/emailAddress=kathesama@gmail.com'
+
+for clients certs execute
+>
