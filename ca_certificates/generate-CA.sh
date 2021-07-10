@@ -165,7 +165,8 @@ if [ ! -f $CACERT.crt ]; then
 	openssl genrsa -out $CACERT.key -aes256 -passout pass:"$P_CA_KEY" 4096
 	echo "Created CA key in $CACERT.key"	
 
-	openssl req -new -x509 -days 1826 -key $CACERT.key -out $CACERT.crt -passin pass:"$P_CA_KEY" -subj "$CA_ORG"
+	openssl req -new -x509 -days 1826 -key $CACERT.key -out $CACERT.crt -passin pass:"$P_CA_KEY" -subj "$CA_ORG"	
+	
 	echo "Created CA certificate in $CACERT.crt"
 	# $openssl x509 -in $CACERT.crt -nameopt multiline -subject -noout
 
