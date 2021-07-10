@@ -53,13 +53,13 @@ kind=server
 P_OPTION=${1:-host}
 P_HOSTNAME=${2:-$(hostname -f)}
 P_CA_KEY=${3:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${3:-32};echo;)}
-P_CA_ORG=${4:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
+CA_ORG=${4:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
 
 echo "Ca Cert type: $P_OPTION"
 echo "Hostname got: $P_HOSTNAME"
 printf '\e[1;32m%-6s\e[m' "Cert pass is: "
 echo "$P_CA_KEY"
-echo "CA_ORG values got: $P_CA_ORG"
+echo "CA_ORG values got: $CA_ORG"
 
 if [[ $P_OPTION == "host" ]]; then
   	kind=server	
@@ -87,7 +87,7 @@ DIR=${TARGET:='.'}
 # may be empty ""
 ALTHOSTNAMES=${HOSTLIST}
 ALTADDRESSES=${IPLIST}
-CA_ORG=$P_CA_ORG
+# CA_ORG=$P_CA_ORG
 CA_DN="/CN=An MQTT broker${CA_ORG}"
 CACERT=${DIR}/ca
 SERVER="${DIR}/${host}"
@@ -160,9 +160,9 @@ if [ ! -f $CACERT.crt ]; then
 
 	# Create un-encrypted (!) key
 	#$openssl req -newkey rsa:${keybits} -x509 -nodes $defaultmd -days $days -extensions v3_ca -keyout $CACERT.key -out $CACERT.crt -subj "${CA_DN}"
-	$openssl req -newkey rsa:${keybits} -x509 -nodes $defaultmd -days $days -extensions v3_ca -keyout $CACERT.key -out $CACERT.crt -subj "${CA_DN}"
-
+	$openssl req genrsa -des3 -newkey rsa:${keybits} -x509 -nodes $defaultmd -days $days -extensions v3_ca -keyout $CACERT.key -out $CACERT.crt -subj "${CA_DN}"
 	echo "Created CA certificate in $CACERT.crt"
+
 	$openssl x509 -in $CACERT.crt -nameopt multiline -subject -noout
 
 	chmod 400 $CACERT.key
