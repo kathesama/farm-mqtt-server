@@ -102,7 +102,7 @@ MOSQUITTOUSER=${MOSQUITTOUSER:=$USER}
 #
 #	defaultmd="-sha256"
 #
-defaultmd="-aes256"
+defaultmd="-sha256"
 
 function maxdays() {
 	nowyear=$(date +%Y)
@@ -279,7 +279,7 @@ else
 !ENDClientconfigREQ	 	
 		$openssl req -new $defaultmd \
 			-key $CLIENT.key \
-			-out $CLIENT.csr \		
+			-out $CLIENT.csr \
 			-config $CNF
 		chmod 400 $CLIENT.key
 	fi
@@ -319,3 +319,4 @@ else
 		chmod 444 $CLIENT.crt
 	fi
 fi
+
