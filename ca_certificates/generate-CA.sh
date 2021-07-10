@@ -191,7 +191,7 @@ if [ $kind == 'server' ]; then
 	echo "                                  "
 
 	if [ ! -f "server_certs/$SERVER.key" ]; then
-		printf '\e[1;32m%-6s\e[m' "No $SERVER.key, generating..."
+		printf '\e[1;32m%-6s\e[m' "No server_certs/$SERVER.key, generating..."
 		echo ""
 
 		echo "--- Creating server key and signing request"
@@ -202,6 +202,8 @@ if [ $kind == 'server' ]; then
 			-subj "${SERVER_DN}"
 		chmod 400 $SERVER.key
 		chown $MOSQUITTOUSER $SERVER.key
+
+		sudo mv "$P_HOSTNAME.csr" "$P_HOSTNAME.key" server_certs/
 	else
 		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.key, OK..."
 		echo ""
@@ -261,6 +263,8 @@ if [ $kind == 'server' ]; then
 		rm -f $CNF
 		chmod 444 $SERVER.crt
 		chown $MOSQUITTOUSER $SERVER.crt
+
+		sudo mv "$P_HOSTNAME.crt" server_certs/
 	else
 		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.csr OK, server_certs/$SERVER.crt,OK..."
 		echo ""
@@ -273,8 +277,13 @@ else
 	echo "   \____|_|_|\___|_| |_|\__|"
 	echo "                            "
 
+	if [ ! -d "client_certs/$CLIENT" ]; then
+		printf '\e[1;32m%-6s\e[m' "folder client_certs/$CLIENT does not exists, creating it..."
+		mkdir client_certs/"$CLIENT"
+	fi
+
 	if [ ! -f "client_certs/$CLIENT/$CLIENT.key" ]; then
-		printf '\e[1;32m%-6s\e[m' "No $CLIENT.key, generating..."
+		printf '\e[1;32m%-6s\e[m' "No client_certs/$CLIENT/$CLIENT.key, generating..."
 		echo ""
 
 		echo "--- Creating client key and signing request"
@@ -300,9 +309,11 @@ else
 			-key $CLIENT.key \
 			-out $CLIENT.csr \
 			-config $CNF
-		chmod 400 $CLIENT.key
+		chmod 400 $CLIENT.key		
+		
+		sudo mv "$CLIENT.key" "$CLIENT.csr" "client_certs/$CLIENT/"
 	else
-	  printf '\e[1;32m%-6s\e[m' "$CLIENT.key, OK..."
+	  printf '\e[1;32m%-6s\e[m' "$CLIENT.key and $CLIENT.csr, OK..."
 	  echo ""
 	fi
 
@@ -342,12 +353,10 @@ else
 
 		rm -f $CNF
 		chmod 444 $CLIENT.crt
-
-		echo "--- moving client certs"
-        mkdir client_certs/"$CLIENT"
-        mv $CLIENT.csr $CLIENT.crt $CLIENT.key client_certs/"$CLIENT"
+		        
+        mv $CLIENT.crt client_certs/"$CLIENT"
 	else
-		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.csr OK, client_certs/$CLIENT/$CLIENT.crt,OK..."
+		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, OK..."
 		echo ""
 	fi
 fi
