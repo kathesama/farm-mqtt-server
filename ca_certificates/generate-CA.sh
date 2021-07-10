@@ -90,7 +90,8 @@ ALTADDRESSES=${IPLIST}
 # CA_ORG=$P_CA_ORG
 CA_DN="/CN=An MQTT broker${CA_ORG}"
 CACERT=${DIR}/ca
-SERVER="${DIR}/${host}"
+# SERVER="${DIR}/${host}"
+SERVER="${host}"
 SERVER_DN="/CN=${host}$CA_ORG"
 keybits=4096
 openssl=$(which openssl)
@@ -145,9 +146,9 @@ days=$(maxdays)
 
 server_days=825	# https://support.apple.com/en-us/HT210176
 
-if [ -n "$CAKILLFILES" ]; then
-	rm -f $CACERT.??? $SERVER.??? $CACERT.srl
-fi
+# if [ -n "$CAKILLFILES" ]; then
+# 	rm -f $CACERT.??? $SERVER.??? $CACERT.srl
+# fi
 
 echo "   ____    _      "
 echo "  / ___|  / \     "
@@ -204,6 +205,7 @@ if [ $kind == 'server' ]; then
 		chown $MOSQUITTOUSER $SERVER.key
 
 		sudo mv "$P_HOSTNAME.csr" "$P_HOSTNAME.key" server_certs/
+		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.key and server_certs/$P_HOSTNAME.csr, CREATED..."
 	else
 		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.key, OK..."
 		echo ""
@@ -250,7 +252,7 @@ if [ $kind == 'server' ]; then
 
 		echo "--- Creating and signing server certificate"
 		$openssl x509 -req $defaultmd \
-			-in $SERVER.csr \
+			-in server_certs/$P_HOSTNAME.csr \
 			-CA $CACERT.crt \
 			-CAkey $CACERT.key \
 			-CAcreateserial \
@@ -265,6 +267,7 @@ if [ $kind == 'server' ]; then
 		chown $MOSQUITTOUSER $SERVER.crt
 
 		sudo mv "$P_HOSTNAME.crt" server_certs/
+		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.crt, CREATED..."
 	else
 		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.csr OK, server_certs/$SERVER.crt,OK..."
 		echo ""
