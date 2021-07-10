@@ -43,7 +43,7 @@ echo "2: done"
 
 printf '\e[1;32m%-6s\e[m' "3 Configuring config file..."
 echo ""
-cd config
+cd config.d
 sed -i "s/SERVER_NAME/$P_HOSTNAME/g" mosquitto.conf
 cd ..
 echo "3: done"
