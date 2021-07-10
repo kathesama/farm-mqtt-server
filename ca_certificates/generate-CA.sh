@@ -160,7 +160,7 @@ if [ ! -f $CACERT.crt ]; then
 
 	# Create un-encrypted (!) key
 	#$openssl req -newkey rsa:${keybits} -x509 -nodes $defaultmd -days $days -extensions v3_ca -keyout $CACERT.key -out $CACERT.crt -subj "${CA_DN}"
-	$openssl req genrsa -des3 -newkey rsa:${keybits} -x509 -nodes $defaultmd -days $days -extensions v3_ca -keyout $CACERT.key -out $CACERT.crt -subj "${CA_DN}"
+	$openssl  genrsa -des3 req -newkey rsa:${keybits} -x509 -nodes $defaultmd -days $days -extensions v3_ca -keyout $CACERT.key -out $CACERT.crt -subj "${CA_DN}"
 	echo "Created CA certificate in $CACERT.crt"
 
 	$openssl x509 -in $CACERT.crt -nameopt multiline -subject -noout
