@@ -279,8 +279,7 @@ else
 !ENDClientconfigREQ	 	
 		$openssl req -new $defaultmd \
 			-key $CLIENT.key \
-			-out $CLIENT.csr \
-			-passin pass:"$P_CA_KEY" \
+			-out $CLIENT.csr \			
 			-config $CNF
 		chmod 400 $CLIENT.key
 	fi
@@ -313,8 +312,7 @@ else
 			-CAserial "${DIR}/ca.srl" \
 			-out $CLIENT.crt \
 			-days $days \
-			-extfile ${CNF} \
-			-passin pass:"$P_CA_KEY" \
+			-extfile ${CNF} \			
 			-extensions JPMclientextensions
 
 		rm -f $CNF
