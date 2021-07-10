@@ -3,7 +3,7 @@ clear
 
 P_AMBIENT=${1:-dev}
 P_DOCKER_USERNAME=${2:-mqttAdmin}
-P_DOCKER_USER_KEY=${3:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${3:-32};echo;)}
+P_DOCKER_USER_KEY=${3:-$(< /dev/urandom tr -dc A-Z-a-z-0-9 | head -c${3:-12};echo;)}
 P_OPTION=${4:-host}
 P_HOSTNAME=${5:-$(hostname -f)}
 P_CA_KEY=${6:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${6:-32};echo;)}
