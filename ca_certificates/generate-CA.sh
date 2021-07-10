@@ -279,7 +279,7 @@ else
 !ENDClientconfigREQ	 	
 		$openssl req -new $defaultmd \
 			-key $CLIENT.key \
-			-out $CLIENT.csr \			
+			-out $CLIENT.csr \		
 			-config $CNF
 		chmod 400 $CLIENT.key
 	fi
@@ -312,14 +312,10 @@ else
 			-CAserial "${DIR}/ca.srl" \
 			-out $CLIENT.crt \
 			-days $days \
-			-extfile ${CNF} \			
+			-extfile ${CNF} \
 			-extensions JPMclientextensions
 
 		rm -f $CNF
 		chmod 444 $CLIENT.crt
-
-		echo "--- moving client certs"
-		# mkdir client_certs/"$CLIENT"
-		# mv $CLIENT.csr $CACERT.crt $CACERT.key client_certs/"$CLIENT"
 	fi
 fi
