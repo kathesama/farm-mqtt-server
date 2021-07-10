@@ -39,9 +39,7 @@ printf '\e[1;32m%-6s\e[m' "2 Configuring config file..."
 echo ""
 cd config
 sed -i "s/SERVER_NAME/$P_HOSTNAME/g" mosquitto.conf
-chmod 775 mosquitto.conf
-
-sed -i "s/AMBIENT/$P_AMBIENT/g" password.conf
+sed -i "s/AMBIENT/$P_AMBIENT/g" mosquitto.conf  
 chmod 775 mosquitto.conf
 
 echo "2: done"

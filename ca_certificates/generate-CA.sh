@@ -328,7 +328,7 @@ else
 			-key $CLIENT.key \
 			-out $CLIENT.csr \
 			-config $CNF
-		chmod 400 $CLIENT.key		
+		chmod 755 $CLIENT.key		
 		
 		sudo mv "$CLIENT.key" "$CLIENT.csr" "client_certs/$CLIENT/"
 		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, CREATED..."
