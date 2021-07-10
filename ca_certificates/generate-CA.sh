@@ -282,6 +282,7 @@ else
 
 	if [ ! -d "client_certs/$CLIENT" ]; then
 		printf '\e[1;32m%-6s\e[m' "folder client_certs/$CLIENT does not exists, creating it..."
+		echo ""
 		mkdir client_certs/"$CLIENT"
 	fi
 
@@ -315,8 +316,9 @@ else
 		chmod 400 $CLIENT.key		
 		
 		sudo mv "$CLIENT.key" "$CLIENT.csr" "client_certs/$CLIENT/"
+		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, CREATED..."
 	else
-	  printf '\e[1;32m%-6s\e[m' "$CLIENT.key and $CLIENT.csr, OK..."
+	  printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.key and client_certs/$CLIENT/$CLIENT.csr, OK..."
 	  echo ""
 	fi
 
@@ -344,7 +346,7 @@ else
 
 		echo "--- Creating and signing client certificate"
 		$openssl x509 -req $defaultmd \
-			-in $CLIENT.csr \
+			-in client_certs/$CLIENT/$CLIENT.csr \
 			-CA $CACERT.crt \
 			-CAkey $CACERT.key \
 			-CAcreateserial \
@@ -357,7 +359,8 @@ else
 		rm -f $CNF
 		chmod 444 $CLIENT.crt
 		        
-        mv $CLIENT.crt client_certs/"$CLIENT"
+        mv $CLIENT.crt "client_certs/$CLIENT/"
+		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, CREATED..."
 	else
 		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, OK..."
 		echo ""
