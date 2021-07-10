@@ -37,9 +37,13 @@ echo "1: done"
 #-------------------------------------------------------------------------------------------------
 printf '\e[1;32m%-6s\e[m' "2 Configuring config file..."
 echo ""
-cd config.d
+cd config
 sed -i "s/SERVER_NAME/$P_HOSTNAME/g" mosquitto.conf
+chmod 775 mosquitto.conf
+
 sed -i "s/AMBIENT/$P_AMBIENT/g" password.conf
+chmod 775 mosquitto.conf
+
 echo "2: done"
 
 #-------------------------------------------------------------------------------------------------
@@ -64,18 +68,15 @@ echo ""
 
 docker run --init -d \
 --name="eclipse-mosquitto" \
---net=host \
 --restart always \
--p 1883:1883 \
 -p 8883:8883 \
--p 9001:9001 \
 -e "TZ=America/Argentina/Buenos_Aires" \
--v $(pwd)/config:/mosquitto/config.d \
--v $(pwd)/log/:/mosquitto/log \
+-v $(pwd)/config/mosquitto.conf:/mosquitto/config/mosquitto.conf \
+-v $(pwd)/log:/mosquitto/log \
 -v $(pwd)/data:/mosquitto/data \
 -v $(pwd)/ca_certificates/ca.crt:/ca_certificates/ca.crt \
--v $(pwd)/ca_certificates/certs/$P_HOSTNAME.crt:/ca_certificates/server_certs/$P_HOSTNAME.crt \
--v $(pwd)/ca_certificates/certs/$P_HOSTNAME.key:/ca_certificates/server_certs/$P_HOSTNAME.key \
+-v $(pwd)/ca_certificates/server_certs/$P_HOSTNAME.crt:/ca_certificates/server_certs/$P_HOSTNAME.crt \
+-v $(pwd)/ca_certificates/server_certs/$P_HOSTNAME.key:/ca_certificates/server_certs/$P_HOSTNAME.key \
 eclipse-mosquitto
 
 echo "5: done"

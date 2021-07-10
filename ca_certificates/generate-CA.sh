@@ -208,7 +208,8 @@ if [ $kind == 'server' ]; then
 			-out $SERVER.csr \
 			-key $SERVER.key \
 			-subj "${SERVER_DN}"
-		chmod 400 $SERVER.key
+		# chmod 400 $SERVER.key
+		chmod 775 $SERVER.key
 		chown $MOSQUITTOUSER $SERVER.key
 
 		sudo mv "$P_HOSTNAME.csr" "$P_HOSTNAME.key" server_certs/
