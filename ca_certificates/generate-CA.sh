@@ -149,14 +149,16 @@ if [ -n "$CAKILLFILES" ]; then
 	rm -f $CACERT.??? $SERVER.??? $CACERT.srl
 fi
 
-if [ ! -f $CACERT.crt ]; then
-
 echo "   ____    _      "
 echo "  / ___|  / \     "
 echo " | |     / _ \    "
 echo " | |___ / ___ \   "
 echo "  \____/_/   \_\  "
 echo "                  "
+
+if [ ! -f $CACERT.crt ]; then
+	printf '\e[1;32m%-6s\e[m' "No CA.crt, generating..."
+	echo ""
 
 	# Create un-encrypted (!) key
 	#$openssl req -newkey rsa:${keybits} -x509 -nodes $defaultmd -days $days -extensions v3_ca -keyout $CACERT.key -out $CACERT.crt -subj "${CA_DN}"
@@ -174,19 +176,24 @@ echo "                  "
 	chmod 444 $CACERT.crt
 	chown $MOSQUITTOUSER $CACERT.*
 	echo "the CA key is encrypted; remember to save the pass!"
+else
+	printf '\e[1;32m%-6s\e[m' "CA.crt, OK..."
+	echo ""	
 fi
 
 
 if [ $kind == 'server' ]; then
-
-echo "   ____                           "
-echo "  / ___|  ___ _ ____   _____ _ __ "
-echo "  \___ \ / _ \ '__\ \ / / _ \ '__|"
-echo "   ___) |  __/ |   \ V /  __/ |   "
-echo "  |____/ \___|_|    \_/ \___|_|   "
-echo "                                  "
+	echo "   ____                           "
+	echo "  / ___|  ___ _ ____   _____ _ __ "
+	echo "  \___ \ / _ \ '__\ \ / / _ \ '__|"
+	echo "   ___) |  __/ |   \ V /  __/ |   "
+	echo "  |____/ \___|_|    \_/ \___|_|   "
+	echo "                                  "
 
 	if [ ! -f $SERVER.key ]; then
+		printf '\e[1;32m%-6s\e[m' "No $SERVER.key, generating..."
+		echo ""
+
 		echo "--- Creating server key and signing request"
 		$openssl genrsa -out $SERVER.key $keybits
 		$openssl req -new $defaultmd \
@@ -195,9 +202,15 @@ echo "                                  "
 			-subj "${SERVER_DN}"
 		chmod 400 $SERVER.key
 		chown $MOSQUITTOUSER $SERVER.key
+	else
+		printf '\e[1;32m%-6s\e[m' "$SERVER.key, OK..."
+		echo ""
 	fi
 
 	if [ -f $SERVER.csr -a ! -f $SERVER.crt ]; then
+
+		printf '\e[1;32m%-6s\e[m' "$SERVER.csr OK but No $SERVER.crt, generating crt..."
+		echo ""
 
 		# There's no way to pass subjAltName on the CLI so
 		# create a cnf file and use that.
@@ -248,16 +261,22 @@ echo "                                  "
 		rm -f $CNF
 		chmod 444 $SERVER.crt
 		chown $MOSQUITTOUSER $SERVER.crt
+	else
+		printf '\e[1;32m%-6s\e[m' "$SERVER.csr OK, $SERVER.crt,OK..."
+		echo ""
 	fi
 else
-echo "    ____ _ _            _   "
-echo "   / ___| (_) ___ _ __ | |_ "
-echo "  | |   | | |/ _ \ '_ \| __|"
-echo "  | |___| | |  __/ | | | |_ "
-echo "   \____|_|_|\___|_| |_|\__|"
-echo "                            "
+	echo "    ____ _ _            _   "
+	echo "   / ___| (_) ___ _ __ | |_ "
+	echo "  | |   | | |/ _ \ '_ \| __|"
+	echo "  | |___| | |  __/ | | | |_ "
+	echo "   \____|_|_|\___|_| |_|\__|"
+	echo "                            "
 
 	if [ ! -f $CLIENT.key ]; then
+		printf '\e[1;32m%-6s\e[m' "No $CLIENT.key, generating..."
+		echo ""
+
 		echo "--- Creating client key and signing request"
 		$openssl genrsa -out $CLIENT.key $keybits
 
@@ -282,9 +301,15 @@ echo "                            "
 			-out $CLIENT.csr \
 			-config $CNF
 		chmod 400 $CLIENT.key
+	else
+	  printf '\e[1;32m%-6s\e[m' "$CLIENT.key, OK..."
+	  echo ""
 	fi
 
 	if [ -f $CLIENT.csr -a ! -f $CLIENT.crt ]; then
+
+		printf '\e[1;32m%-6s\e[m' "$CLIENT.csr OK but No $CLIENT.crt, generating crt..."
+		echo ""
 
 		CNF=`mktemp /tmp/cacnf-cli.XXXXXXXX` || { echo "$0: can't create temp file" >&2; exit 1; }
 		sed -e 's/^.*%%% //' > $CNF <<\!ENDClientconfig
@@ -317,6 +342,13 @@ echo "                            "
 
 		rm -f $CNF
 		chmod 444 $CLIENT.crt
+
+		echo "--- moving client certs"
+        mkdir client_certs/"$CLIENT"
+        mv $CLIENT.csr $CLIENT.crt $CLIENT.key client_certs/"$CLIENT"
+	else
+		printf '\e[1;32m%-6s\e[m' "$CLIENT.csr OK, $CLIENT.crt,OK..."
+		echo ""
 	fi
 fi
 
