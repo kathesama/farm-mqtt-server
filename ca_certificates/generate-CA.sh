@@ -57,7 +57,7 @@ CA_ORG=${4:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.
 
 echo "Ca Cert type: $P_OPTION"
 echo "Hostname got: $P_HOSTNAME"
-printf '\e[1;32m%-6s\e[m' "Cert pass is: "
+printf '\e[1;31m%-6s\e[m' "Cert pass is: "
 echo "$P_CA_KEY"
 echo "CA_ORG values got: $CA_ORG"
 
@@ -176,7 +176,12 @@ if [ ! -f $CACERT.crt ]; then
 	chmod 400 $CACERT.key
 	chmod 444 $CACERT.crt
 	chown $MOSQUITTOUSER $CACERT.*
-	echo "the CA key is encrypted; remember to save the pass!"
+
+	printf '\e[1;33m%-6s\e[m' "Getting $CACERT.crt fingerprint"
+	openssl x509 -in $CACERT.crt -noout -sha256 -fingerprint
+	echo ""
+
+	printf '\e[1;31m%-6s\e[m' "the CA key is encrypted; remember to save the pass!"	
 else
 	printf '\e[1;32m%-6s\e[m' "CA.crt, OK..."
 	echo ""	
@@ -205,7 +210,8 @@ if [ $kind == 'server' ]; then
 		chown $MOSQUITTOUSER $SERVER.key
 
 		sudo mv "$P_HOSTNAME.csr" "$P_HOSTNAME.key" server_certs/
-		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.key and server_certs/$P_HOSTNAME.csr, CREATED..."
+		printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.key and server_certs/$P_HOSTNAME.csr, CREATED..."
+		echo ""
 	else
 		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.key, OK..."
 		echo ""
@@ -266,8 +272,13 @@ if [ $kind == 'server' ]; then
 		chmod 444 $SERVER.crt
 		chown $MOSQUITTOUSER $SERVER.crt
 
+		printf '\e[1;33m%-6s\e[m' "Getting $SERVER.crt fingerprint"
+		openssl x509 -in $SERVER.crt -noout -sha256 -fingerprint
+		echo ""
+
 		sudo mv "$P_HOSTNAME.crt" server_certs/
-		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.crt, CREATED..."
+		printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.crt, CREATED..."
+		echo ""
 	else
 		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.csr OK, server_certs/$SERVER.crt,OK..."
 		echo ""
@@ -281,7 +292,7 @@ else
 	echo "                            "
 
 	if [ ! -d "client_certs/$CLIENT" ]; then
-		printf '\e[1;32m%-6s\e[m' "folder client_certs/$CLIENT does not exists, creating it..."
+		printf '\e[1;36m%-6s\e[m' "folder client_certs/$CLIENT does not exists, creating it..."
 		echo ""
 		mkdir client_certs/"$CLIENT"
 	fi
@@ -316,7 +327,7 @@ else
 		chmod 400 $CLIENT.key		
 		
 		sudo mv "$CLIENT.key" "$CLIENT.csr" "client_certs/$CLIENT/"
-		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, CREATED..."
+		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, CREATED..."
 	else
 	  printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.key and client_certs/$CLIENT/$CLIENT.csr, OK..."
 	  echo ""
@@ -358,9 +369,14 @@ else
 
 		rm -f $CNF
 		chmod 444 $CLIENT.crt
+
+		printf '\e[1;33m%-6s\e[m' "Getting $CLIENT.crt fingerprint"
+		openssl x509 -in $CLIENT.crt -noout -sha256 -fingerprint
+		echo ""
 		        
         mv $CLIENT.crt "client_certs/$CLIENT/"
-		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, CREATED..."
+		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, CREATED..."
+		echo ""
 	else
 		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, OK..."
 		echo ""
