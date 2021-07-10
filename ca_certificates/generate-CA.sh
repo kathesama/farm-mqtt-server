@@ -178,10 +178,12 @@ if [ ! -f $CACERT.crt ]; then
 	chown $MOSQUITTOUSER $CACERT.*
 
 	printf '\e[1;33m%-6s\e[m' "Getting $CACERT.crt fingerprint"
+	echo ""
 	openssl x509 -in $CACERT.crt -noout -sha256 -fingerprint
 	echo ""
 
 	printf '\e[1;31m%-6s\e[m' "the CA key is encrypted; remember to save the pass!"	
+	echo ""
 else
 	printf '\e[1;32m%-6s\e[m' "CA.crt, OK..."
 	echo ""	
@@ -273,6 +275,7 @@ if [ $kind == 'server' ]; then
 		chown $MOSQUITTOUSER $SERVER.crt
 
 		printf '\e[1;33m%-6s\e[m' "Getting $SERVER.crt fingerprint"
+		echo ""
 		openssl x509 -in $SERVER.crt -noout -sha256 -fingerprint
 		echo ""
 
@@ -328,6 +331,7 @@ else
 		
 		sudo mv "$CLIENT.key" "$CLIENT.csr" "client_certs/$CLIENT/"
 		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, CREATED..."
+		echo ""
 	else
 	  printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.key and client_certs/$CLIENT/$CLIENT.csr, OK..."
 	  echo ""
@@ -371,6 +375,7 @@ else
 		chmod 444 $CLIENT.crt
 
 		printf '\e[1;33m%-6s\e[m' "Getting $CLIENT.crt fingerprint"
+		echo ""
 		openssl x509 -in $CLIENT.crt -noout -sha256 -fingerprint
 		echo ""
 		        
