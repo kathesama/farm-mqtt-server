@@ -45,11 +45,21 @@ set -e
 
 export LANG=C
 
+echo "**********************************"
+echo "******** generate-CA *************"
+echo "**********************************"
+
 kind=server
 P_OPTION=${1:-host}
 P_HOSTNAME=${2:-$(hostname -f)}
-P_CA_KEY=${3:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;)}
+P_CA_KEY=${3:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${3:-32};echo;)}
 P_CA_ORG=${4:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
+
+echo "Ca Cert type: $P_OPTION"
+echo "Hostname got: $P_HOSTNAME"
+printf '\e[1;32m%-6s\e[m' "Cert pass is: "
+echo "$P_CA_KEY"
+echo "CA_ORG values got: $P_CA_ORG"
 
 if [[ $P_OPTION == "host" ]]; then
   	kind=server	

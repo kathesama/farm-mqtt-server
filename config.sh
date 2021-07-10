@@ -3,23 +3,23 @@ clear
 
 P_AMBIENT=${1:-dev}
 P_DOCKER_USERNAME=${2:-mqttAdmin}
-P_DOCKER_USER_KEY=${3:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;)}
+P_DOCKER_USER_KEY=${3:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${3:-32};echo;)}
 P_OPTION=${4:-host}
 P_HOSTNAME=${5:-$(hostname -f)}
-P_CA_KEY=${6:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-32};echo;)}
+P_CA_KEY=${6:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${6:-32};echo;)}
 P_CA_ORG=${7:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
 
-echo "Params received:"
+echo "-----Params received-----"
 echo "Ambient: $P_AMBIENT"
 echo "Docker MQTT Server Username: $P_DOCKER_USERNAME"
-echo "Docker MQTT Username password: $P_DOCKER_USER_KEY"
+printf '\e[1;32m%-6s\e[m' "Docker MQTT Username password: "
+echo "$P_DOCKER_USER_KEY"
 echo "Ca Cert type: $P_OPTION"
 echo "Hostname got: $P_HOSTNAME"
 printf '\e[1;32m%-6s\e[m' "Cert pass is: "
 echo "$P_CA_KEY"
-printf '\e[1;32m%-6s\e[m' "Cert pass is: "
-echo "$P_CA_KEY"
 echo "CA_ORG values got: $P_CA_ORG"
+echo "----------"
 
 #-------------------------------------------------------------------------------------------------
 printf "\n"

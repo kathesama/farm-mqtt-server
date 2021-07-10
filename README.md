@@ -22,4 +22,4 @@ Params:
 
 
 example:
->source ./config.sh dev mqttDesa '' host srv-pi-desa '' '/O=kathevigs/OU=generate-CA/emailAddress=kathesama@gmail.com'
+>source ./config.sh desa mqttDesa '' host srv-pi-desa '' '/O=kathevigs/OU=generate-CA/emailAddress=kathesama@gmail.com'
