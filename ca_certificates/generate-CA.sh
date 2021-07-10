@@ -160,15 +160,19 @@ if [ ! -f $CACERT.crt ]; then
 
 	# Create un-encrypted (!) key
 	#$openssl req -newkey rsa:${keybits} -x509 -nodes $defaultmd -days $days -extensions v3_ca -keyout $CACERT.key -out $CACERT.crt -subj "${CA_DN}"
-	$openssl  genrsa -des3 req -newkey rsa:${keybits} -x509 -nodes $defaultmd -days $days -extensions v3_ca -keyout $CACERT.key -out $CACERT.crt -subj "${CA_DN}"
-	echo "Created CA certificate in $CACERT.crt"
+	
+	#creating an encripted key
+	openssl genrsa -out $CACERT.key -aes256 -passout pass:"$P_CA_KEY" 4096
+	echo "Created CA key in $CACERT.key"	
 
-	$openssl x509 -in $CACERT.crt -nameopt multiline -subject -noout
+	openssl req -new -x509 -days 1826 -key $CACERT.key -out $CACERT.crt -passin pass:"$P_CA_KEY" -subj "$CA_ORG"
+	echo "Created CA certificate in $CACERT.crt"
+	# $openssl x509 -in $CACERT.crt -nameopt multiline -subject -noout
 
 	chmod 400 $CACERT.key
 	chmod 444 $CACERT.crt
 	chown $MOSQUITTOUSER $CACERT.*
-	echo "Warning: the CA key is not encrypted; store it safely!"
+	echo "the CA key is encrypted; remember to save the pass!"
 fi
 
 
@@ -220,7 +224,7 @@ if [ $kind == 'server' ]; then
 		%%% 
 		%%% [notice]
 		%%% explicitText            = "This CA is for a local MQTT broker installation only"
-		%%% organization            = "OwnTracks"
+		%%% organization            = "kathevigs"
 		%%% noticeNumbers           = 1
 
 !ENDconfig
@@ -266,9 +270,9 @@ else
 		%%% output_password		= secret
 		%%% 
 		%%% [ req_distinguished_name ]
-		%%% # O                       = OwnTracks
+		%%% # O                       = kathevigs
 		%%% # OU                      = MQTT
-		%%% # CN                      = Suzie Smith
+		%%% # CN                      = Katherine Aguirre
 		%%% CN                        = $CLIENT
 		%%% # emailAddress            = $CLIENT
 !ENDClientconfigREQ
