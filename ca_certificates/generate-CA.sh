@@ -102,7 +102,7 @@ MOSQUITTOUSER=${MOSQUITTOUSER:=$USER}
 #
 #	defaultmd="-sha256"
 #
-defaultmd="-sha512"
+defaultmd="-aes256"
 
 function maxdays() {
 	nowyear=$(date +%Y)
@@ -276,11 +276,11 @@ else
 		%%% # CN                      = Katherine Aguirre
 		%%% CN                        = $CLIENT
 		%%% # emailAddress            = $CLIENT
-!ENDClientconfigREQ
-
+!ENDClientconfigREQ	 	
 		$openssl req -new $defaultmd \
-			-out $CLIENT.csr \
 			-key $CLIENT.key \
+			-out $CLIENT.csr \
+			-passin pass:"$P_CA_KEY" \
 			-config $CNF
 		chmod 400 $CLIENT.key
 	fi
@@ -314,9 +314,14 @@ else
 			-out $CLIENT.crt \
 			-days $days \
 			-extfile ${CNF} \
+			-passin pass:"$P_CA_KEY" \
 			-extensions JPMclientextensions
 
 		rm -f $CNF
 		chmod 444 $CLIENT.crt
+
+		echo "--- moving client certs"		
+		mkdir client_certs/"$CLIENT"		
+		mv $CLIENT.csr $CACERT.crt $CACERT.key client_certs/"$CLIENT"
 	fi
 fi

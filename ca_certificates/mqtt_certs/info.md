@@ -1,1 +1,1 @@
-certificates for clients
+certificates for server
