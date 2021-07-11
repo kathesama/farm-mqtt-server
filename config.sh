@@ -6,7 +6,7 @@ P_DOCKER_USERNAME=${2:-mqttAdmin}
 P_DOCKER_USER_KEY=${3:-$(< /dev/urandom tr -dc A-Z-a-z-0-9 | head -c${3:-12};echo;)}
 P_OPTION=${4:-host}
 P_HOSTNAME=${5:-$(hostname -f)}
-P_CA_KEY=${6:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${6:-32};echo;)}
+# P_CA_KEY=${6:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${6:-32};echo;)}
 P_CA_ORG=${7:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
 
 echo "-----Params received-----"
@@ -16,8 +16,8 @@ printf '\e[1;32m%-6s\e[m' "Docker MQTT Username password: "
 echo "$P_DOCKER_USER_KEY"
 echo "Ca Cert type: $P_OPTION"
 echo "Hostname got: $P_HOSTNAME"
-printf '\e[1;32m%-6s\e[m' "Cert pass is: "
-echo "$P_CA_KEY"
+# printf '\e[1;32m%-6s\e[m' "Cert pass is: "
+# echo "$P_CA_KEY"
 echo "CA_ORG values got: $P_CA_ORG"
 echo "----------"
 
@@ -30,7 +30,7 @@ printf '\e[1;32m%-6s\e[m' "1 Configuring certs..."
 echo ""
 chmod 700 ca_certificates
 cd ca_certificates
-source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_KEY $P_CA_ORG
+source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_ORG
 cd ..
 echo "1: done"
 
@@ -39,7 +39,6 @@ printf '\e[1;32m%-6s\e[m' "2 Configuring config file..."
 echo ""
 cd config
 sed -i "s/SERVER_NAME/$P_HOSTNAME/g" mosquitto.conf
-sed -i "s/AMBIENT/$P_AMBIENT/g" mosquitto.conf  
 chmod 775 mosquitto.conf
 
 echo "2: done"
@@ -47,8 +46,11 @@ echo "2: done"
 #-------------------------------------------------------------------------------------------------
 printf '\e[1;32m%-6s\e[m' "3 Creating and configuring password file for mosquitto..."
 echo ""
-touch "mosquitto-$P_AMBIENT.passwd"
-sudo mosquitto_passwd -b "mosquitto-$P_AMBIENT.passwd" $P_DOCKER_USERNAME $P_DOCKER_USER_KEY
+cd config.d
+touch "passwd"
+sudo mosquitto_passwd -b passwd $P_DOCKER_USERNAME $P_DOCKER_USER_KEY
+sudo chmod 775 passwd
+sudo chmod 775 password.conf
 cd ..
 echo "3: done"
 
@@ -64,12 +66,13 @@ echo "4: done"
 printf '\e[1;32m%-2s\e[m' "5 Creating docker container for mosquitto." 
 echo ""
 
-docker run --init -d \
+sudo docker run --init -d \
 --name="eclipse-mosquitto" \
 --restart always \
 -p 8883:8883 \
 -e "TZ=America/Argentina/Buenos_Aires" \
 -v $(pwd)/config/mosquitto.conf:/mosquitto/config/mosquitto.conf \
+-v $(pwd)/config/config.d:/mosquitto/config.d \
 -v $(pwd)/log:/mosquitto/log \
 -v $(pwd)/data:/mosquitto/data \
 -v $(pwd)/ca_certificates/ca.crt:/ca_certificates/ca.crt \

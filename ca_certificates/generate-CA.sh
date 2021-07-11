@@ -52,13 +52,13 @@ echo "**********************************"
 kind=server
 P_OPTION=${1:-host}
 P_HOSTNAME=${2:-$(hostname -f)}
-P_CA_KEY=${3:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${3:-32};echo;)}
-CA_ORG=${4:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
+# P_CA_KEY=${3:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${3:-32};echo;)}
+CA_ORG=${3:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
 
 echo "Ca Cert type: $P_OPTION"
 echo "Hostname got: $P_HOSTNAME"
-printf '\e[1;31m%-6s\e[m' "Cert pass is: "
-echo "$P_CA_KEY"
+# printf '\e[1;31m%-6s\e[m' "Cert pass is: "
+# echo "$P_CA_KEY"
 echo "CA_ORG values got: $CA_ORG"
 
 if [[ $P_OPTION == "host" ]]; then
@@ -318,17 +318,17 @@ else
 		%%% output_password		= secret
 		%%% 
 		%%% [ req_distinguished_name ]
+		%%% # C                       = AR
+		%%% # ST                      = CABA
+		%%% # L                       = Buenos Aires Capital
 		%%% # O                       = kathevigs
 		%%% # OU                      = MQTT
 		%%% # CN                      = Katherine Aguirre
 		%%% CN                        = $CLIENT
 		%%% # emailAddress            = $CLIENT
 !ENDClientconfigREQ
-		$openssl req -new $defaultmd \
-			-key $CLIENT.key \
-			-out $CLIENT.csr \
-			-config $CNF
-		chmod 755 $CLIENT.key		
+		$openssl req -new $defaultmd -key $CLIENT.key -out $CLIENT.csr -config $CNF
+		chmod 755 $CLIENT.key
 		
 		sudo mv "$CLIENT.key" "$CLIENT.csr" "client_certs/$CLIENT/"
 		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, CREATED..."
@@ -370,7 +370,7 @@ else
 			-out $CLIENT.crt \
 			-days $days \
 			-extfile ${CNF} \
-			-extensions JPMclientextensions
+			-extensions JPMclientextensions			
 
 		rm -f $CNF
 		chmod 444 $CLIENT.crt
@@ -381,6 +381,7 @@ else
 		echo ""
 		        
         mv $CLIENT.crt "client_certs/$CLIENT/"
+		cp $CACERT.crt "client_certs/$CLIENT/"
 		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, CREATED..."
 		echo ""
 	else
