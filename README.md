@@ -1,7 +1,9 @@
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.2/css/all.css" integrity="sha384-vSIIfh2YWi9wW0r9iZe7RJPrKwp6bG+s9QZMoITbCckVJqGCCRhc+ccxNcdpHuYu" crossorigin="anonymous">
 
 [<img src="https://img.shields.io/badge/Linkedin-kathesama-blue?style=for-the-badge&logo=linkedin">](https://www.linkedin.com/in/kathesama)
-![MongoDB](https://img.shields.io/badge/-MongoDB-009900?logo=mongodb&logoColor=white&style=for-the-badge)
+<br>
+![VSCode](https://img.shields.io/badge/Made%20for-VSCode-1f425f.svg?style=for-the-badge&logo=visualstudio)
+![Open In Collab](https://img.shields.io/badge/Works%20with-Docker-blue?style=for-the-badge&logo=docker)
 <br>
 [![GitHub issues](https://img.shields.io/github/issues/kathesama/farm-mqtt-server?style=plastic)](https://github.com/kathesama/farm-mqtt-server/issues)
 [![GitHub forks](https://img.shields.io/github/forks/kathesama/farm-mqtt-server?style=plastic)](https://github.com/kathesama/farm-mqtt-server/network)
@@ -15,6 +17,7 @@
 
 # farm-mqtt-server
 Mqtt server for farm project
+
 
 execute 
 > source ./config.sh <dev|prod> <dockerUser> [dockerUserPassword] <host|client> [hostname] [caCertPassword] <CA_ORG> 
@@ -59,7 +62,8 @@ example:
 
 Checking mqtt server, execute to publish
 
-> mosquitto_pub --cafile ca_certificates/ca.crt \
+```
+mosquitto_pub --cafile ca_certificates/ca.crt \
 --cert ca_certificates/client_certs/ESPSensorDev-001/ESPSensorDev-001.crt \
 --key ca_certificates/client_certs/ESPSensorDev-001/ESPSensorDev-001.key \
 -h 10.0.0.12 \-u mqttDesa \
@@ -67,9 +71,10 @@ Checking mqtt server, execute to publish
 -t casa/laboratorio/switch1/set \
 -m "hola desde desa" \
 -p 8883 -d
-
+```
 And this one for listening
-> mosquitto_sub --cafile ca_certificates/ca.crt \
+```
+mosquitto_sub --cafile ca_certificates/ca.crt \
 --cert ca_certificates/client_certs/ESPSensorDev-001/ESPSensorDev-001.crt \
 --key ca_certificates/client_certs/ESPSensorDev-001/ESPSensorDev-001.key \
 -v -t casa/laboratorio/switch1 \
@@ -78,4 +83,5 @@ And this one for listening
 -u mqttDesa \
 -P b69FLW7WzMdpv \
 -d
+```
 
