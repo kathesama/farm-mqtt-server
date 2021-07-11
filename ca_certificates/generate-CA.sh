@@ -53,7 +53,7 @@ kind=server
 P_OPTION=${1:-host}
 P_HOSTNAME=${2:-$(hostname -f)}
 # P_CA_KEY=${3:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${3:-32};echo;)}
-CA_ORG=${3:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
+CA_ORG=${3:-$(echo '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
 
 echo "Ca Cert type: $P_OPTION"
 echo "Hostname got: $P_HOSTNAME"
