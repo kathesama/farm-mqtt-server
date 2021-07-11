@@ -51,7 +51,8 @@ touch "passwd"
 sudo mosquitto_passwd -b passwd $P_DOCKER_USERNAME $P_DOCKER_USER_KEY
 sudo chmod 775 passwd
 sudo chmod 775 password.conf
-cd ..
+cd ../../
+
 echo "3: done"
 
 #-------------------------------------------------------------------------------------------------
