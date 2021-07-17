@@ -248,7 +248,8 @@ if [ $kind == 'server' ]; then
 			printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.key and server_certs/$P_HOSTNAME.csr, CREATED..."
 			echo ""
 		else
-			openssl req -newkey rsa:4096 -days 1000 -nodes -keyout $P_HOSTNAME-key.pem -out $P_HOSTNAME-req.pem
+			echo "--- Creating server key.pem, req.pem and signing request"
+			openssl req -newkey rsa:4096 -days 1000 -nodes -keyout $P_HOSTNAME-key.pem -out $P_HOSTNAME-req.pem -subj "${CA_DN}"
 			openssl x509 -req -in $P_HOSTNAME-req.pem -days 1000 -CA ca-cert.pem -CAkey ca-key.pem -set_serial 01 -out $P_HOSTNAME-cert.pem
 
 			sudo mv "$P_HOSTNAME-req.pem" "$P_HOSTNAME-key.pem" server_certs/
