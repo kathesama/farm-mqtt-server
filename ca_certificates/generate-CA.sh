@@ -91,6 +91,7 @@ ALTADDRESSES=${IPLIST}
 # CA_ORG=$P_CA_ORG
 CA_DN="/CN=An MQTT broker${CA_ORG}"
 CACERT=${DIR}/ca
+# CACERT=ca
 # SERVER="${DIR}/${host}"
 SERVER="${host}"
 SERVER_DN="/CN=${host}$CA_ORG"
@@ -178,7 +179,7 @@ if [ ! -f "$CACERT-cert.$P_CA_FORMAT" ]; then
 		openssl genrsa -out "$CACERT-key.pem" ${keybits}
 
 		# step 2: generate server cert
-		openssl req -new -x509 -nodes -days 1000 -key "$CACERT-key.pem" -out "$CACERT-cert.pem"
+		openssl req -new -x509 -nodes -days 1000 -key "$CACERT-key.pem" -out "$CACERT-cert.pem" -subj "${CA_DN}"
 		
 
 		# client certs
@@ -205,7 +206,7 @@ if [ ! -f "$CACERT-cert.$P_CA_FORMAT" ]; then
 	# $openssl x509 -in $CACERT.crt -nameopt multiline -subject -noout
 	
 	chmod 444 "$CACERT-cert.$P_CA_FORMAT"
-	chown $MOSQUITTOUSER $CACERT.*
+	chown $MOSQUITTOUSER $CACERT-*.*
 
 	printf '\e[1;33m%-6s\e[m' "Getting "$CACERT-cert.$P_CA_FORMAT" fingerprint"
 	echo ""

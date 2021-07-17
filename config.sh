@@ -1,17 +1,17 @@
 #!/bin/sh
 clear
 
-P_AMBIENT=${1:-dev}
-P_DOCKER_USERNAME=${2:-mqttAdmin}
-P_DOCKER_USER_KEY=${3:-$(< /dev/urandom tr -dc A-Z-a-z-0-9 | head -c${3:-12};echo;)}
-P_OPTION=${4:-host}
-P_HOSTNAME=${5:-$(hostname -f)}
-P_CA_ORG=${7:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
+# P_AMBIENT=${1:-dev}
+P_DOCKER_USERNAME=${1:-mqttAdmin}
+P_DOCKER_USER_KEY=${2:-$(< /dev/urandom tr -dc A-Z-a-z-0-9 | head -c${3:-12};echo;)}
+P_OPTION=${3:-host}
+P_HOSTNAME=${4:-$(hostname -f)}
+P_CA_ORG=${5:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
 # P_CA_KEY=${6:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${6:-32};echo;)}
-P_CA_FORMAT=${8:-crt)}
+P_CA_FORMAT=${6:-crt)}
 
 echo "-----Params received-----"
-echo "Ambient: $P_AMBIENT"
+# echo "Ambient: $P_AMBIENT"
 echo "Docker MQTT Server Username: $P_DOCKER_USERNAME"
 printf '\e[1;32m%-6s\e[m' "Docker MQTT Username password: "
 echo "$P_DOCKER_USER_KEY"

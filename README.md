@@ -32,30 +32,31 @@ execute
     OU: organizative unity
 
 Params:
-1. 'dev|prod': This indicates which ambient will be performed on, by default is *dev*
-2. 'dockerUser': Docker user for mosquitto server, by default is *mqttAdmin*
-3. 'dockerUserPassword': Docker password for user for mosquitto server, default is *a random string* 
-4. 'host|client': This indicates which operation will be performed on, by default is *host*
-5. 'hostname': Name related with certs generated, this indicates file name and host's name
-6. 'caCertPassword': Ca Cert password related for security purposes, default is *a random string* 
-7. 'CA_ORG': this gives the remaining parameters for the CA cert config, <br>
+<!-- 1. 'dev|prod': This indicates which ambient will be performed on, by default is *dev* -->
+1. 'dockerUser': Docker user for mosquitto server, by default is *mqttAdmin*
+2. 'dockerUserPassword': Docker password for user for mosquitto server, default is *a random string* 
+3. 'host|client': This indicates which operation will be performed on, by default is *host*
+4. 'hostname': Name related with certs generated, this indicates file name and host's name
+<!-- 6. 'caCertPassword': Ca Cert password related for security purposes, default is *a random string*  -->
+5. 'CA_ORG': this gives the remaining parameters for the CA cert config, <br>
     > estructure **MUST BE LIKE** (default value): '/C=AR/ST=CABA/L=Buenos_Aires_Capital//O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net' 
-8. 'P_CA_FORMAT': output certs format, <crt|pem>, **by default is *.crt***
+6. 'P_CA_FORMAT': output certs format, <crt|pem>, **by default is *crt***
 
 
 example:
->source ./config.sh desa mqttDesa b69FLW7WzMdpv host srv-pi-desa '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=kathevigs/OU=generate-CA/emailAddress=kathesama@gmail.com' pem
+>source ./config.sh mqttDesa b69FLW7WzMdpv host srv-pi-desa '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=kathevigs/OU=generate-CA/emailAddress=kathesama@gmail.com' pem
 
 ---
 
 For clients certs execute
-> source ./ca_certificates/generate-CA.sh <client> <clientName> [CA_ORG]
+> source ./ca_certificates/generate-CA.sh <client> <clientName> [CA_ORG] <P_CA_FORMAT>
 
 Params:
 1. 'host|client': This indicates which operation will be performed on, by default is *host* but it **MUST BE PROVIDED** client
 2. 'clientName': Name related with certs generated, this indicates file name and host's name, by default is the server's name but it **MUST BE PROVIDED** client name
 3. 'CA_ORG': this gives the remaining parameters for the CA cert config, <br>
     > estructure **MUST BE LIKE** (default value): '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net'
+4. 'P_CA_FORMAT': output certs format, <crt|pem>, **by default is *crt***    
 
 example:
 > cd ca_certificates <br>
