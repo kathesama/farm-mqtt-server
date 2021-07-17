@@ -49,7 +49,7 @@ echo "2: done"
 printf '\e[1;32m%-6s\e[m' "3 Creating and configuring password file for mosquitto..."
 echo ""
 cd config.d
-touch "passwd"
+sudo touch passwd
 sudo mosquitto_passwd -b passwd $P_DOCKER_USERNAME $P_DOCKER_USER_KEY
 sudo chmod 775 passwd
 sudo chmod 775 password.conf

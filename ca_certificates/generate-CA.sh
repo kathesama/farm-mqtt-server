@@ -258,7 +258,7 @@ else
 	echo ""	
 fi
 
-if [ $kind == 'server' ]; then
+if [ $kind == "server" ]; then
 	echo "   ____                           "
 	echo "  / ___|  ___ _ ____   _____ _ __ "
 	echo "  \___ \ / _ \ '__\ \ / / _ \ '__|"
@@ -266,7 +266,7 @@ if [ $kind == 'server' ]; then
 	echo "  |____/ \___|_|    \_/ \___|_|   "
 	echo "                                  "
 
-	if [ ! -f "server_certs/$SERVER-key.key" -a $P_CA_FORMAT == 'crt' ] || [ ! -f "server_certs/$SERVER-key.pem" -a $P_CA_FORMAT == 'pem' ]; then
+	if [ ! -f "server_certs/$SERVER-key.key" -a "$P_CA_FORMAT" == "crt" ] || [ ! -f "server_certs/$SERVER-key.pem" -a "$P_CA_FORMAT"== "pem" ]; then
 		printf '\e[1;32m%-6s\e[m' "No server_certs/$SERVER-key.$P_CA_FORMAT, generating..."
 		echo ""
 
@@ -303,68 +303,79 @@ if [ $kind == 'server' ]; then
 		echo ""
 	fi
 	
-	if  [-f "server_certs/$SERVER.csr" -a ! -f "server_certs/$SERVER.crt" -a "$P_CA_FORMAT" == "crt" ]; 
-		then
-			printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.csr OK but No server_certs/$SERVER.crt, generating crt..."
-			echo ""
+	# if [-f "server_certs/$SERVER.csr" -a ! -f "server_certs/$SERVER.crt" -a "$P_CA_FORMAT" == "crt" ];
+	# 	then
+	# 		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.csr OK but No server_certs/$SERVER.crt, generating crt..."
+	# 		echo ""
 
-			generateCNFFile
+	# 		generateCNFFile
 
-			echo "--- Creating and signing server certificate"
+	# 		echo "--- Creating and signing server certificate"
 				
-			$openssl x509 -req $defaultmd \
-				-in server_certs/$P_HOSTNAME.csr \
-				-CA $CACERT.crt \
-				-CAkey $CACERT.key \
-				-CAcreateserial \
-				-CAserial "${DIR}/ca.srl" \
-				-out $SERVER.crt \
-				-days $server_days \
-				-extfile ${CNF} \
-				-extensions JPMextensions
+	# 		$openssl x509 -req $defaultmd \
+	# 			-in server_certs/$P_HOSTNAME.csr \
+	# 			-CA $CACERT.crt \
+	# 			-CAkey $CACERT.key \
+	# 			-CAcreateserial \
+	# 			-CAserial "${DIR}/ca.srl" \
+	# 			-out $SERVER.crt \
+	# 			-days $server_days \
+	# 			-extfile ${CNF} \
+	# 			-extensions JPMextensions
 
-			rm -f $CNF
+	# 		rm -f $CNF
 
-			chmod 444 $SERVER.crt
-			chown $MOSQUITTOUSER $SERVER.crt
+	# 		chmod 444 $SERVER.crt
+	# 		chown $MOSQUITTOUSER $SERVER.crt
 
-			printf '\e[1;33m%-6s\e[m' "Getting $SERVER.crt fingerprint"
+	# 		printf '\e[1;33m%-6s\e[m' "Getting $SERVER.crt fingerprint"
+	# 		echo ""
+	# 		openssl x509 -in $SERVER.crt -noout -sha256 -fingerprint
+	# 		echo ""
+
+	# 		sudo mv "$P_HOSTNAME.crt" server_certs/
+	# 		printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.crt, CREATED..."
+	# 		echo ""
+	# else
+	# 	if ["$P_CA_FORMAT" == "crt"]; then
+	# 		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER-cert.pem OK, server_certs/$SERVER-req.pem, OK..."
+	# 		echo ""
+	# 	fi	
+	# fi
+	
+	if [-f "server_certs/$P_HOSTNAME-req.pem" -a ! -f "server_certs/$P_HOSTNAME-cert.pem" -a "$P_CA_FORMAT" == "pem" ]; then
+	# 	printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER-cert.crt OK, server_certs/$SERVER-req.crt, OK..."
+	# 	echo ""
+	# fi
+		printf '\e[1;32m%-6s\e[m' "server_certs/$P_HOSTNAME-req.pem OK but No server_certs/$P_HOSTNAME-cert.pem, generating crt..."
+		echo ""
+
+		generateCNFFile		
+							
+		echo "--- Creating cert server and signing request .pem"
+		$openssl x509 -req \
+			-in server_certs/$P_HOSTNAME-req.pem \
+			-CA $CACERT-cert.pem \
+			-CAkey $CACERT-key.pem \
+			-set_serial 01 \
+			-out $SERVER-cert.pem \
+			-days $server_days \
+			-extfile ${CNF} \
+			-extensions JPMextensions
+
+		rm -f $CNF
+
+		chmod 444 $SERVER-cert.pem
+		chown $MOSQUITTOUSER $SERVER-cert.pem
+
+		sudo mv $P_HOSTNAME-*.pem server_certs/
+		printf '\e[1;36m%-6s\e[m' "server_certs/$P_HOSTNAME-cert.pem, CREATED..."
+	else
+		if ["$P_CA_FORMAT" == "pem"]; then
+			printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER-cert.pem OK, server_certs/$SERVER-req.pem, OK..."
 			echo ""
-			openssl x509 -in $SERVER.crt -noout -sha256 -fingerprint
-			echo ""
-
-			sudo mv "$P_HOSTNAME.crt" server_certs/
-			printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.crt, CREATED..."
-			echo ""
-	elif [-f "server_certs/$P_HOSTNAME-req.pem" -a ! -f "server_certs/$P_HOSTNAME-cert.pem" -a "$P_CA_FORMAT" == "pem" ]; 
-		then	
-			printf '\e[1;32m%-6s\e[m' "server_certs/$P_HOSTNAME-req.pem OK but No server_certs/$P_HOSTNAME-cert.pem, generating crt..."
-			echo ""
-
-			generateCNFFile		
-								
-			echo "--- Creating cert server and signing request .pem"
-			$openssl x509 -req \
-				-in server_certs/$P_HOSTNAME-req.pem \
-				-CA $CACERT-cert.pem \
-				-CAkey $CACERT-key.pem \
-				-set_serial 01 \
-				-out $SERVER-cert.pem \
-				-days $server_days \
-				-extfile ${CNF} \
-				-extensions JPMextensions
-
-			rm -f $CNF
-
-			chmod 444 $SERVER-cert.pem
-			chown $MOSQUITTOUSER $SERVER-cert.pem
-
-			sudo mv $P_HOSTNAME-*.pem server_certs/
-			printf '\e[1;36m%-6s\e[m' "server_certs/$P_HOSTNAME-cert.pem, CREATED..."
-		else
-			printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER-cert OK, server_certs/$SERVER-req,OK..."
-			echo ""
-		fi
+		fi		
+	fi
 else
 	echo "    ____ _ _            _   "
 	echo "   / ___| (_) ___ _ __ | |_ "
