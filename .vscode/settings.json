@@ -1,0 +1,30 @@
+{
+    "workbench.colorTheme": "GitHub Light",
+    "workbench.iconTheme": "material-icon-theme",
+    "editor.minimap.enabled": false,
+    "explorer.confirmDelete": false,
+    "git.autofetch": true,
+    "git.enableSmartCommit": true,
+    "sync.autoDownload": true,
+    "sync.autoUpload": true,
+    "sync.quietSync": true,
+    "explorer.confirmDragAndDrop": false,
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "javascript.updateImportsOnFileMove.enabled": "always",
+    "settingsSync.ignoredExtensions": [
+        "ms-vscode.azurecli"
+    ],
+    "github.copilot.inlineSuggest.enable": true,
+    "github.copilot.inlineSuggest.count": 3,
+    "github.copilot.autocomplete.enable": true,
+    "github.copilot.autocomplete.count": 10,
+    "github.copilot.enable": {
+        "*": true,
+        "yaml": false,
+        "plaintext": false,
+        "markdown": false
+    }
+  }
+  

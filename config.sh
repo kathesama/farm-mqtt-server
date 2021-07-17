@@ -6,8 +6,9 @@ P_DOCKER_USERNAME=${2:-mqttAdmin}
 P_DOCKER_USER_KEY=${3:-$(< /dev/urandom tr -dc A-Z-a-z-0-9 | head -c${3:-12};echo;)}
 P_OPTION=${4:-host}
 P_HOSTNAME=${5:-$(hostname -f)}
-# P_CA_KEY=${6:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${6:-32};echo;)}
 P_CA_ORG=${7:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
+# P_CA_KEY=${6:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${6:-32};echo;)}
+P_CA_FORMAT=${8:-crt)}
 
 echo "-----Params received-----"
 echo "Ambient: $P_AMBIENT"
@@ -19,6 +20,7 @@ echo "Hostname got: $P_HOSTNAME"
 # printf '\e[1;32m%-6s\e[m' "Cert pass is: "
 # echo "$P_CA_KEY"
 echo "CA_ORG values got: $P_CA_ORG"
+echo "Output format values got: $P_CA_FORMAT"
 echo "----------"
 
 #-------------------------------------------------------------------------------------------------
@@ -30,7 +32,7 @@ printf '\e[1;32m%-6s\e[m' "1 Configuring certs..."
 echo ""
 chmod 700 ca_certificates
 cd ca_certificates
-source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_ORG
+source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_ORG $P_CA_FORMAT
 cd ..
 echo "1: done"
 

@@ -20,7 +20,7 @@ Mqtt server for farm project
 
 
 execute 
-> source ./config.sh <dev|prod> <dockerUser> [dockerUserPassword] <host|client> [hostname] [caCertPassword] <CA_ORG> 
+> source ./config.sh <dev|prod> <dockerUser> [dockerUserPassword] <host|client> [hostname] [caCertPassword] <CA_ORG> <P_CA_FORMAT> 
 
 * Values with <> are required<br>
 * Values with [] are optional but **MUST BE PROVIDED** two single quotes ''
@@ -39,11 +39,12 @@ Params:
 5. 'hostname': Name related with certs generated, this indicates file name and host's name
 6. 'caCertPassword': Ca Cert password related for security purposes, default is *a random string* 
 7. 'CA_ORG': this gives the remaining parameters for the CA cert config, <br>
-    > estructure **MUST BE LIKE** (default value): '/C=AR/ST=CABA/L=Buenos_Aires_Capital//O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net'        
+    > estructure **MUST BE LIKE** (default value): '/C=AR/ST=CABA/L=Buenos_Aires_Capital//O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net' 
+8. 'P_CA_FORMAT': output certs format, <crt|pem>, **by default is *.crt***
 
 
 example:
->source ./config.sh desa mqttDesa b69FLW7WzMdpv host srv-pi-desa '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=kathevigs/OU=generate-CA/emailAddress=kathesama@gmail.com'
+>source ./config.sh desa mqttDesa b69FLW7WzMdpv host srv-pi-desa '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=kathevigs/OU=generate-CA/emailAddress=kathesama@gmail.com' pem
 
 ---
 

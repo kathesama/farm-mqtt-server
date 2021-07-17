@@ -52,14 +52,15 @@ echo "**********************************"
 kind=server
 P_OPTION=${1:-host}
 P_HOSTNAME=${2:-$(hostname -f)}
-# P_CA_KEY=${3:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${3:-32};echo;)}
 CA_ORG=${3:-$(echo '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
+P_CA_FORMAT=${4:-crt)}
 
 echo "Ca Cert type: $P_OPTION"
 echo "Hostname got: $P_HOSTNAME"
 # printf '\e[1;31m%-6s\e[m' "Cert pass is: "
 # echo "$P_CA_KEY"
 echo "CA_ORG values got: $CA_ORG"
+echo "Output format values got: $P_CA_FORMAT"
 
 if [[ $P_OPTION == "host" ]]; then
   	kind=server
@@ -157,35 +158,64 @@ echo " | |___ / ___ \   "
 echo "  \____/_/   \_\  "
 echo "                  "
 
-if [ ! -f $CACERT.crt ]; then
-	printf '\e[1;32m%-6s\e[m' "No CA.crt, generating..."
+if [ ! -f "$CACERT-cert.$P_CA_FORMAT" ]; then
+	printf '\e[1;32m%-6s\e[m' "No $CACERT-cert.$P_CA_FORMAT, generating..."
 	echo ""
 
 	# Create un-encrypted (!) key
-	$openssl req -newkey rsa:${keybits} -x509 -nodes $defaultmd -days $days -extensions v3_ca -keyout $CACERT.key -out $CACERT.crt -subj "${CA_DN}"
-	
-	#creating an encripted key
-	# openssl genrsa -out $CACERT.key -aes256 -passout pass:"$P_CA_KEY" 4096
-	echo "Created CA key in $CACERT.key"	
+	if [[ $P_CA_FORMAT == "crt" ]]; then
+		$openssl req -newkey rsa:${keybits} -x509 -nodes $defaultmd -days $days -extensions v3_ca -keyout "$CACERT-key.key" -out "$CACERT-cert.crt" -subj "${CA_DN}"
+		#creating an encripted key
+		# openssl genrsa -out $CACERT.key -aes256 -passout pass:"$P_CA_KEY" 4096
+		echo "Created CA crt in $CACERT-cert.$P_CA_FORMAT and key in $CACERT-key.key"
+		chmod 400 "$CACERT-cert.key"
+	else
+	    #another .pem by example
+		# root certs 
+		# openssl genrsa -out ca-key.pem 4096
+		
+		# step 1: generate key 
+		openssl genrsa -out "$CACERT-key.pem" ${keybits}
+
+		# step 2: generate server cert
+		openssl req -new -x509 -nodes -days 1000 -key "$CACERT-key.pem" -out "$CACERT-cert.pem"
+		
+
+		# client certs
+		# openssl req -newkey rsa:4096 -days 1000 -nodes -keyout client-key.pem -out client-req.pem
+		# openssl x509 -req -in client-req.pem -days 1000 -CA ca-cert.pem -CAkey ca-key.pem -set_serial 01 -out client-cert.pem
+		
+		
+		# step 3: convert .pem to .der
+		openssl x509 -in "$CACERT-cert.pem" -out "$CACERT-cert.der" -outform DER	
+
+		#openssl x509 -inform PEM -in root.pem -outform DER -out root.cer
+
+		#luego a .cer para poderlo subir al arduino
+		# step 4: convert .der to .cer
+		openssl x509 -inform der -in "$CACERT-cert.der" -out "$CACERT-cert.cer"
+
+		# step 5: delete .der
+		# rm -f $CACERT.der
+	fi	
 
 	# openssl req -new -x509 -days 1826 -key $CACERT.key -out $CACERT.crt -passin pass:"$P_CA_KEY" -subj "$CA_ORG"	
 	
-	echo "Created CA certificate in $CACERT.crt"
+	echo "Created CA certificate in $CACERT-cert.$P_CA_FORMAT"
 	# $openssl x509 -in $CACERT.crt -nameopt multiline -subject -noout
-
-	chmod 400 $CACERT.key
-	chmod 444 $CACERT.crt
+	
+	chmod 444 "$CACERT-cert.$P_CA_FORMAT"
 	chown $MOSQUITTOUSER $CACERT.*
 
-	printf '\e[1;33m%-6s\e[m' "Getting $CACERT.crt fingerprint"
+	printf '\e[1;33m%-6s\e[m' "Getting "$CACERT-cert.$P_CA_FORMAT" fingerprint"
 	echo ""
-	openssl x509 -in $CACERT.crt -noout -sha256 -fingerprint
+	openssl x509 -in "$CACERT-cert.$P_CA_FORMAT" -noout -sha256 -fingerprint
 	echo ""
 
-	printf '\e[1;31m%-6s\e[m' "the CA key is not encrypted; remember to save it!"	
+	printf '\e[1;31m%-6s\e[m' "the CA-cert key is not encrypted, remember to save it!"	
 	echo ""
 else
-	printf '\e[1;32m%-6s\e[m' "CA.crt, OK..."
+	printf '\e[1;32m%-6s\e[m' "$CACERT-cert.$P_CA_FORMAT, OK..."
 	echo ""	
 fi
 
@@ -198,25 +228,34 @@ if [ $kind == 'server' ]; then
 	echo "  |____/ \___|_|    \_/ \___|_|   "
 	echo "                                  "
 
-	if [ ! -f "server_certs/$SERVER.key" ]; then
-		printf '\e[1;32m%-6s\e[m' "No server_certs/$SERVER.key, generating..."
+	if [ ! -f "server_certs/$SERVER-key.key" -a $P_CA_FORMAT == 'crt' ] || [ ! -f "server_certs/$SERVER-key.pem" -a $P_CA_FORMAT == 'pem' ]; then
+		printf '\e[1;32m%-6s\e[m' "No server_certs/$SERVER-key.$P_CA_FORMAT, generating..."
 		echo ""
 
-		echo "--- Creating server key and signing request"
-		$openssl genrsa -out $SERVER.key $keybits
-		$openssl req -new $defaultmd \
-			-out $SERVER.csr \
-			-key $SERVER.key \
-			-subj "${SERVER_DN}"
-		# chmod 400 $SERVER.key
-		chmod 775 $SERVER.key
-		chown $MOSQUITTOUSER $SERVER.key
+		if [[ $P_CA_FORMAT == "crt" ]]; then
+			echo "--- Creating server key and signing request"
+			$openssl genrsa -out $SERVER-key.key $keybits
+			$openssl req -new $defaultmd \
+				-out $SERVER.csr \
+				-key $SERVER.key \
+				-subj "${SERVER_DN}"
+			# chmod 400 $SERVER.key
+			chmod 775 $SERVER.key
+			chown $MOSQUITTOUSER $SERVER.key
 
-		sudo mv "$P_HOSTNAME.csr" "$P_HOSTNAME.key" server_certs/
-		printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.key and server_certs/$P_HOSTNAME.csr, CREATED..."
-		echo ""
+			sudo mv "$P_HOSTNAME.csr" "$P_HOSTNAME.key" server_certs/
+			printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.key and server_certs/$P_HOSTNAME.csr, CREATED..."
+			echo ""
+		else
+			openssl req -newkey rsa:4096 -days 1000 -nodes -keyout $P_HOSTNAME-key.pem -out $P_HOSTNAME-req.pem
+			openssl x509 -req -in $P_HOSTNAME-req.pem -days 1000 -CA ca-cert.pem -CAkey ca-key.pem -set_serial 01 -out $P_HOSTNAME-cert.pem
+
+			sudo mv "$P_HOSTNAME-req.pem" "$P_HOSTNAME-key.pem" server_certs/
+			printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.key and server_certs/$P_HOSTNAME.csr, CREATED..."
+			echo ""
+		fi		
 	else
-		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.key, OK..."
+		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER-key, OK..."
 		echo ""
 	fi
 
