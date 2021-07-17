@@ -98,6 +98,8 @@ SERVER_DN="/CN=${host}$CA_ORG"
 keybits=4096
 openssl=$(which openssl)
 MOSQUITTOUSER=${MOSQUITTOUSER:=$USER}
+SUBJALTNAME=""
+CNF=""
 
 # Signature Algorithm. To find out which are supported by your
 # version of OpenSSL, run `openssl dgst -help` and set your
@@ -142,6 +144,42 @@ function addresslist() {
 	ALIST="${ALIST}DNS:${host},DNS:localhost"
 	echo $ALIST
 
+}
+
+function generateCNFFile() {
+	# There's no way to pass subjAltName on the CLI so
+	# create a cnf file and use that.
+
+	CNF=`mktemp /tmp/cacnf.XXXXXXXX` || { echo "$0: can't create temp file" >&2; exit 1; }
+	sed -e 's/^.*%%% //' > $CNF <<\!ENDconfig
+	%%% [ JPMextensions ]
+	%%% basicConstraints        = critical,CA:false
+	%%% nsCertType              = server
+	%%% keyUsage                = nonRepudiation, digitalSignature, keyEncipherment
+	%%% extendedKeyUsage        = serverAuth
+	%%% nsComment               = "Broker Certificate"
+	%%% subjectKeyIdentifier    = hash
+	%%% authorityKeyIdentifier  = keyid,issuer:always
+	%%% subjectAltName          = $ENV::SUBJALTNAME
+	%%% # issuerAltName           = issuer:copy
+	%%% ## nsCaRevocationUrl       = http://mqttitude.org/carev/
+	%%% ## nsRevocationUrl         = http://mqttitude.org/carev/
+	%%% certificatePolicies     = ia5org,@polsection
+	%%% 
+	%%% [polsection]
+	%%% policyIdentifier	    = 1.3.5.8
+	%%% CPS.1		    = "http://localhost"
+	%%% userNotice.1	    = @notice
+	%%% 
+	%%% [notice]
+	%%% explicitText            = "This CA is for a local MQTT broker installation only"
+	%%% organization            = "kathevigs"
+	%%% noticeNumbers           = 1
+
+!ENDconfig
+
+	SUBJALTNAME="$(addresslist)"
+	export SUBJALTNAME		# Use environment. Because I can. ;-)
 }
 
 days=$(maxdays)
@@ -220,7 +258,6 @@ else
 	echo ""	
 fi
 
-
 if [ $kind == 'server' ]; then
 	echo "   ____                           "
 	echo "  / ___|  ___ _ ____   _____ _ __ "
@@ -265,49 +302,16 @@ if [ $kind == 'server' ]; then
 		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER-key, OK..."
 		echo ""
 	fi
+	
+	if  [-f "server_certs/$SERVER.csr" -a ! -f "server_certs/$SERVER.crt" -a "$P_CA_FORMAT" == "crt" ]; 
+		then
+			printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.csr OK but No server_certs/$SERVER.crt, generating crt..."
+			echo ""
 
-	if [[[ -f "server_certs/$SERVER.csr" -a ! -f "server_certs/$SERVER.crt" ] -a $P_CA_FORMAT == 'crt' ] || [[ -f "server_certs/$P_HOSTNAME-req.pem" -a ! -f "server_certs/$P_HOSTNAME-cert.pem" ] -a $P_CA_FORMAT == 'pem' ]]; then
+			generateCNFFile
 
-		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.csr OK but No server_certs/$SERVER.crt, generating crt..."
-		echo ""
-
-		# There's no way to pass subjAltName on the CLI so
-		# create a cnf file and use that.
-
-		CNF=`mktemp /tmp/cacnf.XXXXXXXX` || { echo "$0: can't create temp file" >&2; exit 1; }
-		sed -e 's/^.*%%% //' > $CNF <<\!ENDconfig
-		%%% [ JPMextensions ]
-		%%% basicConstraints        = critical,CA:false
-		%%% nsCertType              = server
-		%%% keyUsage                = nonRepudiation, digitalSignature, keyEncipherment
-		%%% extendedKeyUsage        = serverAuth
-		%%% nsComment               = "Broker Certificate"
-		%%% subjectKeyIdentifier    = hash
-		%%% authorityKeyIdentifier  = keyid,issuer:always
-		%%% subjectAltName          = $ENV::SUBJALTNAME
-		%%% # issuerAltName           = issuer:copy
-		%%% ## nsCaRevocationUrl       = http://mqttitude.org/carev/
-		%%% ## nsRevocationUrl         = http://mqttitude.org/carev/
-		%%% certificatePolicies     = ia5org,@polsection
-		%%% 
-		%%% [polsection]
-		%%% policyIdentifier	    = 1.3.5.8
-		%%% CPS.1		    = "http://localhost"
-		%%% userNotice.1	    = @notice
-		%%% 
-		%%% [notice]
-		%%% explicitText            = "This CA is for a local MQTT broker installation only"
-		%%% organization            = "kathevigs"
-		%%% noticeNumbers           = 1
-
-!ENDconfig
-
-		SUBJALTNAME="$(addresslist)"
-		export SUBJALTNAME		# Use environment. Because I can. ;-)
-
-		echo "--- Creating and signing server certificate"
-
-		if [[ $P_CA_FORMAT == "crt" ]]; then
+			echo "--- Creating and signing server certificate"
+				
 			$openssl x509 -req $defaultmd \
 				-in server_certs/$P_HOSTNAME.csr \
 				-CA $CACERT.crt \
@@ -320,6 +324,7 @@ if [ $kind == 'server' ]; then
 				-extensions JPMextensions
 
 			rm -f $CNF
+
 			chmod 444 $SERVER.crt
 			chown $MOSQUITTOUSER $SERVER.crt
 
@@ -331,18 +336,35 @@ if [ $kind == 'server' ]; then
 			sudo mv "$P_HOSTNAME.crt" server_certs/
 			printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.crt, CREATED..."
 			echo ""
-		else			
+	elif [-f "server_certs/$P_HOSTNAME-req.pem" -a ! -f "server_certs/$P_HOSTNAME-cert.pem" -a "$P_CA_FORMAT" == "pem" ]; 
+		then	
+			printf '\e[1;32m%-6s\e[m' "server_certs/$P_HOSTNAME-req.pem OK but No server_certs/$P_HOSTNAME-cert.pem, generating crt..."
+			echo ""
+
+			generateCNFFile		
+								
 			echo "--- Creating cert server and signing request .pem"
-			openssl x509 -req -in server_certs/$P_HOSTNAME-req.pem -CA $CACERT-cert.pem -CAkey $CACERT-key.pem -set_serial 01 -out $P_HOSTNAME-cert.pem -days 1000 -extfile ${CNF} -extensions JPMextensions
+			$openssl x509 -req \
+				-in server_certs/$P_HOSTNAME-req.pem \
+				-CA $CACERT-cert.pem \
+				-CAkey $CACERT-key.pem \
+				-set_serial 01 \
+				-out $SERVER-cert.pem \
+				-days $server_days \
+				-extfile ${CNF} \
+				-extensions JPMextensions
+
+			rm -f $CNF
+
+			chmod 444 $SERVER-cert.pem
+			chown $MOSQUITTOUSER $SERVER-cert.pem
 
 			sudo mv $P_HOSTNAME-*.pem server_certs/
 			printf '\e[1;36m%-6s\e[m' "server_certs/$P_HOSTNAME-cert.pem, CREATED..."
-		fi	
-			
-	else
-		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.csr OK, server_certs/$SERVER.crt,OK..."
-		echo ""
-	fi
+		else
+			printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER-cert OK, server_certs/$SERVER-req,OK..."
+			echo ""
+		fi
 else
 	echo "    ____ _ _            _   "
 	echo "   / ___| (_) ___ _ __ | |_ "
