@@ -236,9 +236,10 @@ if [ $kind == 'server' ]; then
 		if [[ $P_CA_FORMAT == "crt" ]]; then
 			echo "--- Creating server key and signing request"
 			$openssl genrsa -out $SERVER-key.key $keybits
+
 			$openssl req -new $defaultmd \
-				-out $SERVER.csr \
 				-key $SERVER.key \
+				-out $SERVER.csr \
 				-subj "${SERVER_DN}"
 			# chmod 400 $SERVER.key
 			chmod 775 $SERVER.key
@@ -248,12 +249,16 @@ if [ $kind == 'server' ]; then
 			printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.key and server_certs/$P_HOSTNAME.csr, CREATED..."
 			echo ""
 		else
-			echo "--- Creating server key.pem, req.pem and signing request"
-			openssl req -newkey rsa:4096 -days 1000 -nodes -keyout $P_HOSTNAME-key.pem -out $P_HOSTNAME-req.pem -subj "${CA_DN}"
-			openssl x509 -req -in $P_HOSTNAME-req.pem -days 1000 -CA ca-cert.pem -CAkey ca-key.pem -set_serial 01 -out $P_HOSTNAME-cert.pem
+			echo "--- Creating server key.pem and req.pem ..."
+			openssl req -newkey rsa:4096 -nodes -keyout $P_HOSTNAME-key.pem -out $P_HOSTNAME-req.pem -subj "${CA_DN}"
+			chmod 775 $P_HOSTNAME-key.pem
+			chown $MOSQUITTOUSER $P_HOSTNAME-*.pem
+			
+			# echo "--- Creating cert server and signing request"
+			# openssl x509 -req -in $P_HOSTNAME-req.pem -days 1000 -CA ca-cert.pem -CAkey ca-key.pem -set_serial 01 -out $P_HOSTNAME-cert.pem
 
-			sudo mv "$P_HOSTNAME-req.pem" "$P_HOSTNAME-key.pem" server_certs/
-			printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.key and server_certs/$P_HOSTNAME.csr, CREATED..."
+			sudo mv $P_HOSTNAME-*.pem server_certs/
+			printf '\e[1;36m%-6s\e[m' "server_certs/$P_HOSTNAME-req.pem, server_certs/$P_HOSTNAME-key.pem, CREATED..."
 			echo ""
 		fi		
 	else
@@ -261,7 +266,7 @@ if [ $kind == 'server' ]; then
 		echo ""
 	fi
 
-	if [ -f "server_certs/$SERVER.csr" -a ! -f "server_certs/$SERVER.crt" ]; then
+	if [[[ -f "server_certs/$SERVER.csr" -a ! -f "server_certs/$SERVER.crt" ] -a $P_CA_FORMAT == 'crt' ] || [[ -f "server_certs/$P_HOSTNAME-req.pem" -a ! -f "server_certs/$P_HOSTNAME-cert.pem" ] -a $P_CA_FORMAT == 'pem' ]]; then
 
 		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.csr OK but No server_certs/$SERVER.crt, generating crt..."
 		echo ""
@@ -301,29 +306,39 @@ if [ $kind == 'server' ]; then
 		export SUBJALTNAME		# Use environment. Because I can. ;-)
 
 		echo "--- Creating and signing server certificate"
-		$openssl x509 -req $defaultmd \
-			-in server_certs/$P_HOSTNAME.csr \
-			-CA $CACERT.crt \
-			-CAkey $CACERT.key \
-			-CAcreateserial \
-			-CAserial "${DIR}/ca.srl" \
-			-out $SERVER.crt \
-			-days $server_days \
-			-extfile ${CNF} \
-			-extensions JPMextensions
 
-		rm -f $CNF
-		chmod 444 $SERVER.crt
-		chown $MOSQUITTOUSER $SERVER.crt
+		if [[ $P_CA_FORMAT == "crt" ]]; then
+			$openssl x509 -req $defaultmd \
+				-in server_certs/$P_HOSTNAME.csr \
+				-CA $CACERT.crt \
+				-CAkey $CACERT.key \
+				-CAcreateserial \
+				-CAserial "${DIR}/ca.srl" \
+				-out $SERVER.crt \
+				-days $server_days \
+				-extfile ${CNF} \
+				-extensions JPMextensions
 
-		printf '\e[1;33m%-6s\e[m' "Getting $SERVER.crt fingerprint"
-		echo ""
-		openssl x509 -in $SERVER.crt -noout -sha256 -fingerprint
-		echo ""
+			rm -f $CNF
+			chmod 444 $SERVER.crt
+			chown $MOSQUITTOUSER $SERVER.crt
 
-		sudo mv "$P_HOSTNAME.crt" server_certs/
-		printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.crt, CREATED..."
-		echo ""
+			printf '\e[1;33m%-6s\e[m' "Getting $SERVER.crt fingerprint"
+			echo ""
+			openssl x509 -in $SERVER.crt -noout -sha256 -fingerprint
+			echo ""
+
+			sudo mv "$P_HOSTNAME.crt" server_certs/
+			printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.crt, CREATED..."
+			echo ""
+		else			
+			echo "--- Creating cert server and signing request .pem"
+			openssl x509 -req -in server_certs/$P_HOSTNAME-req.pem -CA $CACERT-cert.pem -CAkey $CACERT-key.pem -set_serial 01 -out $P_HOSTNAME-cert.pem -days 1000 -extfile ${CNF} -extensions JPMextensions
+
+			sudo mv $P_HOSTNAME-*.pem server_certs/
+			printf '\e[1;36m%-6s\e[m' "server_certs/$P_HOSTNAME-cert.pem, CREATED..."
+		fi	
+			
 	else
 		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.csr OK, server_certs/$SERVER.crt,OK..."
 		echo ""
