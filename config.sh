@@ -42,8 +42,8 @@ echo ""
 cd config
 sed -i "s/SERVER_NAME/$P_HOSTNAME/g" mosquitto.conf
 if [[ "$P_CA_FORMAT" == "pem" ]]; then
-    sed -i "s/.crt/pem/g" mosquitto.conf
-    sed -i "s/.keys/pem/g" mosquitto.conf
+    sed -i "s/.crt/.pem/g" mosquitto.conf
+    sed -i "s/.keys/.pem/g" mosquitto.conf
 else
     sed -i "s/.keys/.key/g" mosquitto.conf
 fi
@@ -76,19 +76,29 @@ echo "4: done"
 printf '\e[1;32m%-2s\e[m' "5 Creating docker container for mosquitto." 
 echo ""
 
-sudo docker run --init -d \
---name="eclipse-mosquitto" \
---restart always \
--p 8883:8883 \
--e "TZ=America/Argentina/Buenos_Aires" \
--v $(pwd)/config/mosquitto.conf:/mosquitto/config/mosquitto.conf \
--v $(pwd)/config/config.d:/mosquitto/config.d \
--v $(pwd)/log:/mosquitto/log \
--v $(pwd)/data:/mosquitto/data \
--v $(pwd)/ca_certificates/ca.crt:/ca_certificates/ca.crt \
--v $(pwd)/ca_certificates/server_certs/$P_HOSTNAME.crt:/ca_certificates/server_certs/$P_HOSTNAME.crt \
--v $(pwd)/ca_certificates/server_certs/$P_HOSTNAME.key:/ca_certificates/server_certs/$P_HOSTNAME.key \
-eclipse-mosquitto
+if [[ "$P_CA_FORMAT" == "pem" ]]; then
+    sed -i "s/.crt/.pem/g" create-container.sh
+    sed -i "s/.keys/.pem/g" create-container.sh
+    sed -i "s/.keys/.pem/g" create-container.sh
+else
+    sed -i "s/.keys/.key/g" create-container.sh
+fi
+
+source ./create-container.sh $P_HOSTNAME
+
+# sudo docker run --init -d \
+# --name="eclipse-mosquitto" \
+# --restart always \
+# -p 8883:8883 \
+# -e "TZ=America/Argentina/Buenos_Aires" \
+# -v $(pwd)/config/mosquitto.conf:/mosquitto/config/mosquitto.conf \
+# -v $(pwd)/config/config.d:/mosquitto/config.d \
+# -v $(pwd)/log:/mosquitto/log \
+# -v $(pwd)/data:/mosquitto/data \
+# -v $(pwd)/ca_certificates/ca.crt:/ca_certificates/ca-cert.crt \
+# -v $(pwd)/ca_certificates/server_certs/$P_HOSTNAME-cert.crt:/ca_certificates/server_certs/$P_HOSTNAME-cert.crt \
+# -v $(pwd)/ca_certificates/server_certs/$P_HOSTNAME-key.key:/ca_certificates/server_certs/$P_HOSTNAME-key.key \
+# eclipse-mosquitto
 
 echo "5: done"
 
