@@ -31,7 +31,7 @@ printf "\n"
 printf '\e[1;32m%-6s\e[m' "1 Configuring certs..."
 echo ""
 chmod 700 ca_certificates
-cd ca_certificates
+cd ca_certificates || exit
 source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_ORG $P_CA_FORMAT
 cd ..
 echo "1: done"
@@ -39,7 +39,7 @@ echo "1: done"
 #-------------------------------------------------------------------------------------------------
 printf '\e[1;32m%-6s\e[m' "2 Configuring config file..."
 echo ""
-cd config
+cd config || exit
 sed -i "s/SERVER_NAME/$P_HOSTNAME/g" mosquitto.conf
 if [[ "$P_CA_FORMAT" == "pem" ]]; then
     sed -i "s/.crt/.pem/g" mosquitto.conf
@@ -55,7 +55,7 @@ echo "2: done"
 #-------------------------------------------------------------------------------------------------
 printf '\e[1;32m%-6s\e[m' "3 Creating and configuring password file for mosquitto..."
 echo ""
-cd config.d
+cd config.d || exit
 sudo touch passwd
 sudo mosquitto_passwd -b passwd $P_DOCKER_USERNAME $P_DOCKER_USER_KEY
 sudo chmod 775 passwd

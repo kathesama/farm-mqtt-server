@@ -54,6 +54,7 @@ P_OPTION=${1:-host}
 P_HOSTNAME=${2:-$(hostname -f)}
 CA_ORG=${3:-$(echo '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
 P_CA_FORMAT=${4:-pem)}
+CLIENT=""
 
 echo "Ca Cert type: $P_OPTION"
 echo "Hostname got: $P_HOSTNAME"
@@ -100,6 +101,8 @@ openssl=$(which openssl)
 MOSQUITTOUSER=${MOSQUITTOUSER:=$USER}
 SUBJALTNAME=""
 CNF=""
+CNF2=""
+CNF3=""
 
 # Signature Algorithm. To find out which are supported by your
 # version of OpenSSL, run `openssl dgst -help` and set your
@@ -109,7 +112,7 @@ CNF=""
 #
 defaultmd="-sha256"
 
-function maxdays() {
+maxdays() {
 	nowyear=$(date +%Y)
 	years=$(expr 2032 - $nowyear)
 	days=$(expr $years '*' 365)
@@ -117,7 +120,7 @@ function maxdays() {
 	echo $days
 }
 
-function getipaddresses() {
+getipaddresses() {
 	/sbin/ifconfig |
 		grep -v tunnel |
 		sed -En '/inet6? /p' |
@@ -127,7 +130,7 @@ function getipaddresses() {
 		egrep -v '(::1|127\.0\.0\.1)'	# omit loopback to add it later
 }
 
-function addresslist() {
+addresslist() {
 	ALIST=""
 	for a in $(getipaddresses); do
 		ALIST="${ALIST}IP:$a,"
@@ -144,7 +147,7 @@ function addresslist() {
 	echo $ALIST
 }
 
-function generateCNFFileServerCert() {
+generateCNFFileServerCert() {
 	# There's no way to pass subjAltName on the CLI so
 	# create a cnf file and use that.
 
@@ -180,46 +183,49 @@ function generateCNFFileServerCert() {
 	export SUBJALTNAME		# Use environment. Because I can. ;-)
 }
 
-function generateCNFFileClientReq() {
+generateCNFFileClientReq() {
 	# There's no way to pass subjAltName on the CLI so
 	# create a cnf file and use that.
 
-	CNF=`mktemp /tmp/cacnf-req.XXXXXXXX` || { echo "$0: can't create temp file" >&2; exit 1; }
-		# Mosquitto's use_identity_as_username takes the CN attribute
-		# so we're populating that with the client's name
-		sed -e 's/^.*%%% //' > $CNF <<!ENDClientconfigREQ
-		%%% [ req ]
-		%%% distinguished_name	= req_distinguished_name
-		%%% prompt			= no
-		%%% output_password		= secret
-		%%% 
-		%%% [ req_distinguished_name ]
-		%%% # C                       = AR
-		%%% # ST                      = CABA
-		%%% # L                       = Buenos Aires Capital
-		%%% # O                       = kathevigs
-		%%% # OU                      = MQTT
-		%%% # CN                      = Katherine Aguirre
-		%%% CN                        = $CLIENT
-		%%% # emailAddress            = $CLIENT
-!ENDClientconfigREQ	
+	# Mosquitto's use_identity_as_username takes the CN attribute
+	# so we're populating that with the client's name
+	CNF2=$(mktemp /tmp/cacnf-req.XXXXXXXX) || { echo "$0: can't create temp file" >&2; exit 1; }	
+	sed -e 's/^.*%%% //' > $CNF2 <<\!ENDClientconfigREQ
+	%%% [ req ]
+	%%% distinguished_name	= req_distinguished_name
+	%%% prompt			= no
+	%%% output_password		= secret
+	%%% 
+	%%% [ req_distinguished_name ]
+	%%% # C                       = AR
+	%%% # ST                      = CABA
+	%%% # L                       = Buenos Aires Capital
+	%%% # O                       = kathevigs
+	%%% # OU                      = MQTT
+	%%% # CN                      = Katherine Aguirre
+	%%% CN                        = CLIENT
+	%%% # emailAddress            = $CLIENT
+
+!ENDClientconfigREQ
+
+	sed -i "s/CLIENT/$CLIENT/g" $CNF2
 }
 
-function generateCNFFileClientCacnf() {
+generateCNFFileClientCacnf() {
 	# There's no way to pass subjAltName on the CLI so
 	# create a cnf file and use that.
 
-	CNF=`mktemp /tmp/cacnf-cli.XXXXXXXX` || { echo "$0: can't create temp file" >&2; exit 1; }
-		sed -e 's/^.*%%% //' > $CNF <<\!ENDClientconfig
-		%%% [ JPMclientextensions ]
-		%%% basicConstraints        = critical,CA:false
-		%%% subjectAltName          = email:copy
-		%%% nsCertType              = client,email
-		%%% extendedKeyUsage        = clientAuth,emailProtection
-		%%% keyUsage                = digitalSignature, keyEncipherment, keyAgreement
-		%%% nsComment               = "Client Broker Certificate"
-		%%% subjectKeyIdentifier    = hash
-		%%% authorityKeyIdentifier  = keyid,issuer:always
+	CNF3=$(mktemp /tmp/cacnf-cli.XXXXXXXX) || { echo "$0: can't create temp file" >&2; exit 1; }
+	sed -e 's/^.*%%% //' > "$CNF3" <<\!ENDClientconfig
+	%%% [ JPMclientextensions ]
+	%%% basicConstraints        = critical,CA:false
+	%%% subjectAltName          = email:copy
+	%%% nsCertType              = client,email
+	%%% extendedKeyUsage        = clientAuth,emailProtection
+	%%% keyUsage                = digitalSignature, keyEncipherment, keyAgreement
+	%%% nsComment               = "Client Broker Certificate"
+	%%% subjectKeyIdentifier    = hash
+	%%% authorityKeyIdentifier  = keyid,issuer:always
 
 !ENDClientconfig
 
@@ -250,7 +256,7 @@ if [ ! -f "$CACERT-cert.$P_CA_FORMAT" ]; then
 	if [[ $P_CA_FORMAT == "crt" ]]; then
 		echo "creating $CACERT-key.key and $CACERT-cert.crt ..."
 
-		$openssl req -newkey rsa:${keybits} -x509 -nodes $defaultmd -days $days -extensions v3_ca -keyout "$CACERT-key.key" -out "$CACERT-cert.crt" -subj "${CA_DN}"
+		$openssl req -newkey rsa:${keybits} -x509 -nodes $defaultmd -days "$days" -extensions v3_ca -keyout "$CACERT-key.key" -out "$CACERT-cert.crt" -subj "${CA_DN}"
 		#creating an encripted key
 		# openssl genrsa -out $CACERT.key -aes256 -passout pass:"$P_CA_KEY" 4096
 		echo "Created CA crt in $CACERT-cert.crt and key in $CACERT-key.key"
@@ -371,7 +377,7 @@ if [ $kind == "server" ]; then
 				-CAserial "${DIR}/ca-srl.srl" \
 				-out $SERVER-cert.crt \
 				-days $server_days \
-				-extfile ${CNF} \
+				-extfile "${CNF}" \
 				-extensions JPMextensions
 
 			rm -f $CNF
@@ -435,6 +441,8 @@ else
 	echo "   \____|_|_|\___|_| |_|\__|"
 	echo "                            "
 
+	# ----------------------------------------------------------------
+
 	if [ ! -d "client_certs/$CLIENT" ]; then
 		printf '\e[1;36m%-6s\e[m' "folder client_certs/$CLIENT does not exists, creating it..."
 		echo ""
@@ -444,30 +452,46 @@ else
 		echo ""
 	fi
 
-	if [ ! -f "client_certs/$CLIENT/$CLIENT-key.key" ]; then
+	# ----------------------------------------------------------------
+	# creating client key
+	if [ ! -f "client_certs/$CLIENT/$CLIENT-key.key" -a $P_CA_FORMAT == "crt" ]; then
+	# if [ ! -f "client_certs/$CLIENT/$CLIENT-key.key" ]; then
 		printf '\e[1;32m%-6s\e[m' "No client_certs/$CLIENT/$CLIENT-key.key, generating..."
 		echo ""
 
 		echo "--- Creating client key and signing request"
 		$openssl genrsa -out $CLIENT-key.key $keybits
 
-		generateCNFFileClientReq
+		generateCNFFileClientReq $CLIENT
 
-		$openssl req -new $defaultmd -key $CLIENT-key.key -out $CLIENT-req.csr -config $CNF
+		$openssl req -new $defaultmd -key $CLIENT-key.key -out $CLIENT-req.csr -config $CNF2
 		chmod 755 $CLIENT-key.key
 		
 		sudo mv "$CLIENT-key.key" "$CLIENT-req.csr" "client_certs/$CLIENT/"
 		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-key.key client_certs/$CLIENT/$CLIENT-req.csr, CREATED..."
 		
-		rm -f $CNF
+		rm -f $CNF2
 
 		echo ""
+	elif [ ! -f "client_certs/$CLIENT/$CLIENT-key.pem" -a  $P_CA_FORMAT = "pem" ]; then	
+		printf '\e[1;32m%-6s\e[m' "No client_certs/$CLIENT/$CLIENT-key.pem, generating..."
+		echo ""
+
+		echo "--- Creating client key and signing request"
+		op enssl req -newkey rsa:4096 -nodes -keyout $CLIENT-key.pem -out $CLIENT-req.pem -subj "${CA_DN}"
+	
+		# openssl x509 -req -in client-req.pem -days "$days" -CA ca-cert.pem -CAkey ca-key.pem -set_serial 01 -out client-cert.pem;
 	else
-	  printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-key.key and client_certs/$CLIENT/$CLIENT-req.csr, OK..."
-	  echo ""
+		if [[ "$P_CA_FORMAT" == "crt" ]]; then
+			printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-key.key and client_certs/$CLIENT/$CLIENT-req.csr, OK..."
+	  		echo ""
+		fi
 	fi
 
-	if [ -f "client_certs/$CLIENT/$CLIENT-req.csr" -a ! -f "client_certs/$CLIENT/$CLIENT-cert.crt" ]; then
+	# ----------------------------------------------------------------
+
+	if [[ ( -f "client_certs/$CLIENT/$CLIENT-req.csr" && ! -f "client_certs/$CLIENT/$CLIENT-cert.crt" && "$P_CA_FORMAT" == "crt" ) ]]; then
+	# if [ -f "client_certs/$CLIENT/$CLIENT-req.csr" -a ! -f "client_certs/$CLIENT/$CLIENT-cert.crt" ]; then
 
 		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-req.csr OK but No client_certs/$CLIENT/$CLIENT-cert.crt, generating crt..."
 		echo ""
@@ -483,10 +507,11 @@ else
 			-CAserial "${DIR}/ca.srl" \
 			-out $CLIENT-cert.crt \
 			-days $days \
-			-extfile ${CNF} \
+			-extfile ${CNF3} \
 			-extensions JPMclientextensions			
 
-		rm -f $CNF
+		rm -f $CNF3
+
 		chmod 444 $CLIENT-cert.crt
 
 		printf '\e[1;33m%-6s\e[m' "Getting $CLIENT-cert.crt fingerprint"
@@ -503,4 +528,3 @@ else
 		echo ""
 	fi
 fi
-
