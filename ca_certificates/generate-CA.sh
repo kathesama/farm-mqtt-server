@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #(@)generate-CA.sh - Create CA key-pair and server key-pair signed by CA
 
 # Copyright (c) 2013-2020 Jan-Piet Mens <jpmens()gmail.com>
@@ -53,7 +53,7 @@ kind=server
 P_OPTION=${1:-host}
 P_HOSTNAME=${2:-$(hostname -f)}
 CA_ORG=${3:-$(echo '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
-P_CA_FORMAT=${4:-crt)}
+P_CA_FORMAT=${4:-pem)}
 
 echo "Ca Cert type: $P_OPTION"
 echo "Hostname got: $P_HOSTNAME"
@@ -128,7 +128,6 @@ function getipaddresses() {
 }
 
 function addresslist() {
-
 	ALIST=""
 	for a in $(getipaddresses); do
 		ALIST="${ALIST}IP:$a,"
@@ -143,7 +142,6 @@ function addresslist() {
 	done
 	ALIST="${ALIST}DNS:${host},DNS:localhost"
 	echo $ALIST
-
 }
 
 function generateCNFFile() {
@@ -203,11 +201,13 @@ if [ ! -f "$CACERT-cert.$P_CA_FORMAT" ]; then
 
 	# Create un-encrypted (!) key
 	if [[ $P_CA_FORMAT == "crt" ]]; then
+		echo "creating $CACERT-key.key and $CACERT-cert.crt ..."
+
 		$openssl req -newkey rsa:${keybits} -x509 -nodes $defaultmd -days $days -extensions v3_ca -keyout "$CACERT-key.key" -out "$CACERT-cert.crt" -subj "${CA_DN}"
 		#creating an encripted key
 		# openssl genrsa -out $CACERT.key -aes256 -passout pass:"$P_CA_KEY" 4096
-		echo "Created CA crt in $CACERT-cert.$P_CA_FORMAT and key in $CACERT-key.key"
-		chmod 400 "$CACERT-cert.key"
+		echo "Created CA crt in $CACERT-cert.crt and key in $CACERT-key.key"
+		chmod 400 "$CACERT-key.key"
 	else
 	    #another .pem by example
 		# root certs 
@@ -241,7 +241,7 @@ if [ ! -f "$CACERT-cert.$P_CA_FORMAT" ]; then
 	# openssl req -new -x509 -days 1826 -key $CACERT.key -out $CACERT.crt -passin pass:"$P_CA_KEY" -subj "$CA_ORG"	
 	
 	echo "Created CA certificate in $CACERT-cert.$P_CA_FORMAT"
-	# $openssl x509 -in $CACERT.crt -nameopt multiline -subject -noout
+	# $openssl x509 -in $CACERT-cert.crt -nameopt multiline -subject -noout
 	
 	chmod 444 "$CACERT-cert.$P_CA_FORMAT"
 	chown $MOSQUITTOUSER $CACERT-*.*
@@ -251,7 +251,7 @@ if [ ! -f "$CACERT-cert.$P_CA_FORMAT" ]; then
 	openssl x509 -in "$CACERT-cert.$P_CA_FORMAT" -noout -sha256 -fingerprint
 	echo ""
 
-	printf '\e[1;31m%-6s\e[m' "the CA-cert key is not encrypted, remember to save it!"	
+	printf '\e[1;31m%-6s\e[m' "the CA-cert cert is not encrypted, remember to save it!"	
 	echo ""
 else
 	printf '\e[1;32m%-6s\e[m' "$CACERT-cert.$P_CA_FORMAT, OK..."
@@ -266,91 +266,92 @@ if [ $kind == "server" ]; then
 	echo "  |____/ \___|_|    \_/ \___|_|   "
 	echo "                                  "
 
-	if [ ! -f "server_certs/$SERVER-key.key" -a "$P_CA_FORMAT" == "crt" ] || [ ! -f "server_certs/$SERVER-key.pem" -a "$P_CA_FORMAT"== "pem" ]; then
-		printf '\e[1;32m%-6s\e[m' "No server_certs/$SERVER-key.$P_CA_FORMAT, generating..."
+	if [ ! -f "server_certs/$SERVER-key.key" -a $P_CA_FORMAT == "crt" ]; then
+		printf '\e[1;32m%-6s\e[m' "No server_certs/$SERVER-key.key, generating..."
+		echo ""	
+
+		echo "--- Creating server .key and .csr"
+		$openssl genrsa -out $SERVER-key.key $keybits
+
+		$openssl req -new $defaultmd \
+			-key $SERVER-key.key \
+			-out $SERVER-req.csr \
+			-subj "${SERVER_DN}"
+		# chmod 400 $SERVER.key
+		chmod 775 $SERVER-key.key
+		chown $MOSQUITTOUSER $SERVER-key.key
+
+		sudo mv "$P_HOSTNAME-req.csr" "$P_HOSTNAME-key.key" server_certs/
+		printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER-key.key and server_certs/$P_HOSTNAME-req.csr, CREATED..."
+		echo ""
+	elif [ ! -f "server_certs/$SERVER-key.pem" -a  $P_CA_FORMAT = "pem" ]; then	
+	  	printf '\e[1;32m%-6s\e[m' "No server_certs/$SERVER-key.pem, generating..."
 		echo ""
 
-		if [[ $P_CA_FORMAT == "crt" ]]; then
-			echo "--- Creating server key and signing request"
-			$openssl genrsa -out $SERVER-key.key $keybits
+	  	echo "--- Creating server key.pem and req.pem ..."
+		openssl req -newkey rsa:4096 -nodes -keyout $P_HOSTNAME-key.pem -out $P_HOSTNAME-req.pem -subj "${CA_DN}"
+		
+		chmod 775 $P_HOSTNAME-key.pem
+		chown $MOSQUITTOUSER $P_HOSTNAME-*.pem
+		
+		# echo "--- Creating cert server and signing request"
+		# openssl x509 -req -in $P_HOSTNAME-req.pem -days 1000 -CA ca-cert.pem -CAkey ca-key.pem -set_serial 01 -out $P_HOSTNAME-cert.pem
 
-			$openssl req -new $defaultmd \
-				-key $SERVER.key \
-				-out $SERVER.csr \
-				-subj "${SERVER_DN}"
-			# chmod 400 $SERVER.key
-			chmod 775 $SERVER.key
-			chown $MOSQUITTOUSER $SERVER.key
-
-			sudo mv "$P_HOSTNAME.csr" "$P_HOSTNAME.key" server_certs/
-			printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.key and server_certs/$P_HOSTNAME.csr, CREATED..."
-			echo ""
-		else
-			echo "--- Creating server key.pem and req.pem ..."
-			openssl req -newkey rsa:4096 -nodes -keyout $P_HOSTNAME-key.pem -out $P_HOSTNAME-req.pem -subj "${CA_DN}"
-			chmod 775 $P_HOSTNAME-key.pem
-			chown $MOSQUITTOUSER $P_HOSTNAME-*.pem
-			
-			# echo "--- Creating cert server and signing request"
-			# openssl x509 -req -in $P_HOSTNAME-req.pem -days 1000 -CA ca-cert.pem -CAkey ca-key.pem -set_serial 01 -out $P_HOSTNAME-cert.pem
-
-			sudo mv $P_HOSTNAME-*.pem server_certs/
-			printf '\e[1;36m%-6s\e[m' "server_certs/$P_HOSTNAME-req.pem, server_certs/$P_HOSTNAME-key.pem, CREATED..."
-			echo ""
-		fi		
+		sudo mv $P_HOSTNAME-*.pem server_certs/
+		printf '\e[1;36m%-6s\e[m' "server_certs/$P_HOSTNAME-req.pem, server_certs/$P_HOSTNAME-key.pem, CREATED..."
+		echo ""
 	else
-		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER-key, OK..."
-		echo ""
+		echo "server_certs/$SERVER-key and server_certs/$P_HOSTNAME-cert, ARE CREATED"
+	fi	
+	
+	# Signing
+	# if [-f "server_certs/$SERVER-req.csr" -a ! -f "server_certs/$SERVER-cert.crt" -a "$P_CA_FORMAT" == "crt" ];
+	if [[ ( -f "server_certs/$SERVER-req.csr" && ! -f "server_certs/$SERVER-cert.crt" && "$P_CA_FORMAT" == "crt" ) ]];
+		then
+			printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER-req.csr OK but No server_certs/$SERVER-cert.crt, generating crt..."
+			echo ""
+
+			generateCNFFile
+
+			echo "--- Creating and signing server certificate"
+				
+			$openssl x509 -req $defaultmd \
+				-in server_certs/$P_HOSTNAME-req.csr \
+				-CA $CACERT-cert.crt \
+				-CAkey $CACERT-key.key \
+				-CAcreateserial \
+				-CAserial "${DIR}/ca-srl.srl" \
+				-out $SERVER-cert.crt \
+				-days $server_days \
+				-extfile ${CNF} \
+				-extensions JPMextensions
+
+			rm -f $CNF
+
+			chmod 444 $SERVER-cert.crt
+			chown $MOSQUITTOUSER $SERVER-cert.crt
+
+			printf '\e[1;33m%-6s\e[m' "Getting $SERVER-cert.crt fingerprint"
+			echo ""
+			openssl x509 -in $SERVER-cert.crt -noout -sha256 -fingerprint
+			echo ""
+
+			sudo mv "$P_HOSTNAME-cert.crt" server_certs/
+			printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER-cert.crt, CREATED..."
+			echo ""
+	else
+		if [[ "$P_CA_FORMAT" == "crt" ]]; then
+			printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER-cert.key OK, server_certs/$SERVER-req.crt, OK..."
+			echo ""
+		fi	
 	fi
 	
-	# if [-f "server_certs/$SERVER.csr" -a ! -f "server_certs/$SERVER.crt" -a "$P_CA_FORMAT" == "crt" ];
-	# 	then
-	# 		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER.csr OK but No server_certs/$SERVER.crt, generating crt..."
-	# 		echo ""
-
-	# 		generateCNFFile
-
-	# 		echo "--- Creating and signing server certificate"
-				
-	# 		$openssl x509 -req $defaultmd \
-	# 			-in server_certs/$P_HOSTNAME.csr \
-	# 			-CA $CACERT.crt \
-	# 			-CAkey $CACERT.key \
-	# 			-CAcreateserial \
-	# 			-CAserial "${DIR}/ca.srl" \
-	# 			-out $SERVER.crt \
-	# 			-days $server_days \
-	# 			-extfile ${CNF} \
-	# 			-extensions JPMextensions
-
-	# 		rm -f $CNF
-
-	# 		chmod 444 $SERVER.crt
-	# 		chown $MOSQUITTOUSER $SERVER.crt
-
-	# 		printf '\e[1;33m%-6s\e[m' "Getting $SERVER.crt fingerprint"
-	# 		echo ""
-	# 		openssl x509 -in $SERVER.crt -noout -sha256 -fingerprint
-	# 		echo ""
-
-	# 		sudo mv "$P_HOSTNAME.crt" server_certs/
-	# 		printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER.crt, CREATED..."
-	# 		echo ""
-	# else
-	# 	if ["$P_CA_FORMAT" == "crt"]; then
-	# 		printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER-cert.pem OK, server_certs/$SERVER-req.pem, OK..."
-	# 		echo ""
-	# 	fi	
-	# fi
-	
-	if [-f "server_certs/$P_HOSTNAME-req.pem" -a ! -f "server_certs/$P_HOSTNAME-cert.pem" -a "$P_CA_FORMAT" == "pem" ]; then
-	# 	printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER-cert.crt OK, server_certs/$SERVER-req.crt, OK..."
-	# 	echo ""
-	# fi
+	# if [ [ -f "server_certs/$P_HOSTNAME-req.pem" -a ! -f "server_certs/$P_HOSTNAME-cert.pem"] && $P_CA_FORMAT = 'pem']; then	
+	if [[ ( -f "server_certs/$P_HOSTNAME-req.pem" && ! -f "server_certs/$P_HOSTNAME-cert.pem" && "$P_CA_FORMAT" == "pem" ) ]]; then
 		printf '\e[1;32m%-6s\e[m' "server_certs/$P_HOSTNAME-req.pem OK but No server_certs/$P_HOSTNAME-cert.pem, generating crt..."
 		echo ""
 
-		generateCNFFile		
+		generateCNFFile
 							
 		echo "--- Creating cert server and signing request .pem"
 		$openssl x509 -req \
@@ -371,7 +372,7 @@ if [ $kind == "server" ]; then
 		sudo mv $P_HOSTNAME-*.pem server_certs/
 		printf '\e[1;36m%-6s\e[m' "server_certs/$P_HOSTNAME-cert.pem, CREATED..."
 	else
-		if ["$P_CA_FORMAT" == "pem"]; then
+		if [[ "$P_CA_FORMAT" == "pem" ]]; then
 			printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER-cert.pem OK, server_certs/$SERVER-req.pem, OK..."
 			echo ""
 		fi		
@@ -388,14 +389,17 @@ else
 		printf '\e[1;36m%-6s\e[m' "folder client_certs/$CLIENT does not exists, creating it..."
 		echo ""
 		mkdir client_certs/"$CLIENT"
+	else
+	  	printf '\e[1;36m%-6s\e[m' "folder client_certs/$CLIENT OK..."
+		echo ""
 	fi
 
-	if [ ! -f "client_certs/$CLIENT/$CLIENT.key" ]; then
-		printf '\e[1;32m%-6s\e[m' "No client_certs/$CLIENT/$CLIENT.key, generating..."
+	if [ ! -f "client_certs/$CLIENT/$CLIENT-key.key" ]; then
+		printf '\e[1;32m%-6s\e[m' "No client_certs/$CLIENT/$CLIENT-key.key, generating..."
 		echo ""
 
 		echo "--- Creating client key and signing request"
-		$openssl genrsa -out $CLIENT.key $keybits
+		$openssl genrsa -out $CLIENT-key.key $keybits
 
 		CNF=`mktemp /tmp/cacnf-req.XXXXXXXX` || { echo "$0: can't create temp file" >&2; exit 1; }
 		# Mosquitto's use_identity_as_username takes the CN attribute
@@ -416,20 +420,20 @@ else
 		%%% CN                        = $CLIENT
 		%%% # emailAddress            = $CLIENT
 !ENDClientconfigREQ
-		$openssl req -new $defaultmd -key $CLIENT.key -out $CLIENT.csr -config $CNF
+		$openssl req -new $defaultmd -key $CLIENT.key -out $CLIENT-req.csr -config $CNF
 		chmod 755 $CLIENT.key
 		
-		sudo mv "$CLIENT.key" "$CLIENT.csr" "client_certs/$CLIENT/"
-		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, CREATED..."
+		sudo mv "$CLIENT-key.key" "$CLIENT-req.csr" "client_certs/$CLIENT/"
+		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-key.key client_certs/$CLIENT/$CLIENT-req.csr, CREATED..."
 		echo ""
 	else
-	  printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.key and client_certs/$CLIENT/$CLIENT.csr, OK..."
+	  printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-key.key and client_certs/$CLIENT/$CLIENT-req.csr, OK..."
 	  echo ""
 	fi
 
-	if [ -f "client_certs/$CLIENT/$CLIENT.csr" -a ! -f "client_certs/$CLIENT/$CLIENT.crt" ]; then
+	if [ -f "client_certs/$CLIENT/$CLIENT-req.csr" -a ! -f "client_certs/$CLIENT/$CLIENT-cert.crt" ]; then
 
-		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.csr OK but No client_certs/$CLIENT/$CLIENT.crt, generating crt..."
+		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-req.csr OK but No client_certs/$CLIENT/$CLIENT-cert.crt, generating crt..."
 		echo ""
 
 		CNF=`mktemp /tmp/cacnf-cli.XXXXXXXX` || { echo "$0: can't create temp file" >&2; exit 1; }
@@ -451,30 +455,30 @@ else
 
 		echo "--- Creating and signing client certificate"
 		$openssl x509 -req $defaultmd \
-			-in client_certs/$CLIENT/$CLIENT.csr \
-			-CA $CACERT.crt \
-			-CAkey $CACERT.key \
+			-in client_certs/$CLIENT/$CLIENT-req.csr \
+			-CA $CACERT-cert.crt \
+			-CAkey $CACERT-key.key \
 			-CAcreateserial \
 			-CAserial "${DIR}/ca.srl" \
-			-out $CLIENT.crt \
+			-out $CLIENT-cert.crt \
 			-days $days \
 			-extfile ${CNF} \
 			-extensions JPMclientextensions			
 
 		rm -f $CNF
-		chmod 444 $CLIENT.crt
+		chmod 444 $CLIENT-cert.crt
 
-		printf '\e[1;33m%-6s\e[m' "Getting $CLIENT.crt fingerprint"
+		printf '\e[1;33m%-6s\e[m' "Getting $CLIENT-cert.crt fingerprint"
 		echo ""
-		openssl x509 -in $CLIENT.crt -noout -sha256 -fingerprint
+		openssl x509 -in $CLIENT-cert.crt -noout -sha256 -fingerprint
 		echo ""
 		        
-        mv $CLIENT.crt "client_certs/$CLIENT/"
-		cp $CACERT.crt "client_certs/$CLIENT/"
-		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, CREATED..."
+        mv $CLIENT-cert.crt "client_certs/$CLIENT/"
+		cp $CACERT-cert.crt "client_certs/$CLIENT/"
+		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-cert.crt, CREATED..."
 		echo ""
 	else
-		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT.crt, OK..."
+		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-cert.crt, OK..."
 		echo ""
 	fi
 fi

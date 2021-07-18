@@ -8,7 +8,7 @@ P_OPTION=${3:-host}
 P_HOSTNAME=${4:-$(hostname -f)}
 P_CA_ORG=${5:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
 # P_CA_KEY=${6:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${6:-32};echo;)}
-P_CA_FORMAT=${6:-crt)}
+P_CA_FORMAT=${6:-pem)}
 
 echo "-----Params received-----"
 # echo "Ambient: $P_AMBIENT"
@@ -41,6 +41,13 @@ printf '\e[1;32m%-6s\e[m' "2 Configuring config file..."
 echo ""
 cd config
 sed -i "s/SERVER_NAME/$P_HOSTNAME/g" mosquitto.conf
+if [[ "$P_CA_FORMAT" == "pem" ]]; then
+    sed -i "s/.crt/pem/g" mosquitto.conf
+    sed -i "s/.keys/pem/g" mosquitto.conf
+else
+    sed -i "s/.keys/.key/g" mosquitto.conf
+fi
+
 chmod 775 mosquitto.conf
 
 echo "2: done"

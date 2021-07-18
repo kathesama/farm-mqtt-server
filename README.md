@@ -40,7 +40,7 @@ Params:
 <!-- 6. 'caCertPassword': Ca Cert password related for security purposes, default is *a random string*  -->
 5. 'CA_ORG': this gives the remaining parameters for the CA cert config, <br>
     > estructure **MUST BE LIKE** (default value): '/C=AR/ST=CABA/L=Buenos_Aires_Capital//O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net' 
-6. 'P_CA_FORMAT': output certs format, <crt|pem>, **by default is *crt***
+6. 'P_CA_FORMAT': output certs format, <crt|pem>, **by default is *pem***
 
 
 example:
