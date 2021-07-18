@@ -144,7 +144,7 @@ function addresslist() {
 	echo $ALIST
 }
 
-function generateCNFFile() {
+function generateCNFFileServerCert() {
 	# There's no way to pass subjAltName on the CLI so
 	# create a cnf file and use that.
 
@@ -178,6 +178,53 @@ function generateCNFFile() {
 
 	SUBJALTNAME="$(addresslist)"
 	export SUBJALTNAME		# Use environment. Because I can. ;-)
+}
+
+function generateCNFFileClientReq() {
+	# There's no way to pass subjAltName on the CLI so
+	# create a cnf file and use that.
+
+	CNF=`mktemp /tmp/cacnf-req.XXXXXXXX` || { echo "$0: can't create temp file" >&2; exit 1; }
+		# Mosquitto's use_identity_as_username takes the CN attribute
+		# so we're populating that with the client's name
+		sed -e 's/^.*%%% //' > $CNF <<!ENDClientconfigREQ
+		%%% [ req ]
+		%%% distinguished_name	= req_distinguished_name
+		%%% prompt			= no
+		%%% output_password		= secret
+		%%% 
+		%%% [ req_distinguished_name ]
+		%%% # C                       = AR
+		%%% # ST                      = CABA
+		%%% # L                       = Buenos Aires Capital
+		%%% # O                       = kathevigs
+		%%% # OU                      = MQTT
+		%%% # CN                      = Katherine Aguirre
+		%%% CN                        = $CLIENT
+		%%% # emailAddress            = $CLIENT
+!ENDClientconfigREQ	
+}
+
+function generateCNFFileClientCacnf() {
+	# There's no way to pass subjAltName on the CLI so
+	# create a cnf file and use that.
+
+	CNF=`mktemp /tmp/cacnf-cli.XXXXXXXX` || { echo "$0: can't create temp file" >&2; exit 1; }
+		sed -e 's/^.*%%% //' > $CNF <<\!ENDClientconfig
+		%%% [ JPMclientextensions ]
+		%%% basicConstraints        = critical,CA:false
+		%%% subjectAltName          = email:copy
+		%%% nsCertType              = client,email
+		%%% extendedKeyUsage        = clientAuth,emailProtection
+		%%% keyUsage                = digitalSignature, keyEncipherment, keyAgreement
+		%%% nsComment               = "Client Broker Certificate"
+		%%% subjectKeyIdentifier    = hash
+		%%% authorityKeyIdentifier  = keyid,issuer:always
+
+!ENDClientconfig
+
+		SUBJALTNAME="$(addresslist)"
+		export SUBJALTNAME		# Use environment. Because I can. ;-)
 }
 
 days=$(maxdays)
@@ -282,6 +329,7 @@ if [ $kind == "server" ]; then
 		chown $MOSQUITTOUSER $SERVER-key.key
 
 		sudo mv "$P_HOSTNAME-req.csr" "$P_HOSTNAME-key.key" server_certs/
+		
 		printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER-key.key and server_certs/$P_HOSTNAME-req.csr, CREATED..."
 		echo ""
 	elif [ ! -f "server_certs/$SERVER-key.pem" -a  $P_CA_FORMAT = "pem" ]; then	
@@ -311,7 +359,7 @@ if [ $kind == "server" ]; then
 			printf '\e[1;32m%-6s\e[m' "server_certs/$SERVER-req.csr OK but No server_certs/$SERVER-cert.crt, generating crt..."
 			echo ""
 
-			generateCNFFile
+			generateCNFFileServerCert
 
 			echo "--- Creating and signing server certificate"
 				
@@ -337,6 +385,7 @@ if [ $kind == "server" ]; then
 			echo ""
 
 			sudo mv "$P_HOSTNAME-cert.crt" server_certs/
+			sudo cp $CACERT-cert.crt server_certs/
 			printf '\e[1;36m%-6s\e[m' "server_certs/$SERVER-cert.crt, CREATED..."
 			echo ""
 	else
@@ -351,7 +400,7 @@ if [ $kind == "server" ]; then
 		printf '\e[1;32m%-6s\e[m' "server_certs/$P_HOSTNAME-req.pem OK but No server_certs/$P_HOSTNAME-cert.pem, generating crt..."
 		echo ""
 
-		generateCNFFile
+		generateCNFFileServerCert
 							
 		echo "--- Creating cert server and signing request .pem"
 		$openssl x509 -req \
@@ -370,6 +419,7 @@ if [ $kind == "server" ]; then
 		chown $MOSQUITTOUSER $SERVER-cert.pem
 
 		sudo mv $P_HOSTNAME-*.pem server_certs/
+		sudo cp $CACERT-cert.pem server_certs/
 		printf '\e[1;36m%-6s\e[m' "server_certs/$P_HOSTNAME-cert.pem, CREATED..."
 	else
 		if [[ "$P_CA_FORMAT" == "pem" ]]; then
@@ -401,30 +451,16 @@ else
 		echo "--- Creating client key and signing request"
 		$openssl genrsa -out $CLIENT-key.key $keybits
 
-		CNF=`mktemp /tmp/cacnf-req.XXXXXXXX` || { echo "$0: can't create temp file" >&2; exit 1; }
-		# Mosquitto's use_identity_as_username takes the CN attribute
-		# so we're populating that with the client's name
-		sed -e 's/^.*%%% //' > $CNF <<!ENDClientconfigREQ
-		%%% [ req ]
-		%%% distinguished_name	= req_distinguished_name
-		%%% prompt			= no
-		%%% output_password		= secret
-		%%% 
-		%%% [ req_distinguished_name ]
-		%%% # C                       = AR
-		%%% # ST                      = CABA
-		%%% # L                       = Buenos Aires Capital
-		%%% # O                       = kathevigs
-		%%% # OU                      = MQTT
-		%%% # CN                      = Katherine Aguirre
-		%%% CN                        = $CLIENT
-		%%% # emailAddress            = $CLIENT
-!ENDClientconfigREQ
-		$openssl req -new $defaultmd -key $CLIENT.key -out $CLIENT-req.csr -config $CNF
-		chmod 755 $CLIENT.key
+		generateCNFFileClientReq
+
+		$openssl req -new $defaultmd -key $CLIENT-key.key -out $CLIENT-req.csr -config $CNF
+		chmod 755 $CLIENT-key.key
 		
 		sudo mv "$CLIENT-key.key" "$CLIENT-req.csr" "client_certs/$CLIENT/"
 		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-key.key client_certs/$CLIENT/$CLIENT-req.csr, CREATED..."
+		
+		rm -f $CNF
+
 		echo ""
 	else
 	  printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-key.key and client_certs/$CLIENT/$CLIENT-req.csr, OK..."
@@ -436,22 +472,7 @@ else
 		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-req.csr OK but No client_certs/$CLIENT/$CLIENT-cert.crt, generating crt..."
 		echo ""
 
-		CNF=`mktemp /tmp/cacnf-cli.XXXXXXXX` || { echo "$0: can't create temp file" >&2; exit 1; }
-		sed -e 's/^.*%%% //' > $CNF <<\!ENDClientconfig
-		%%% [ JPMclientextensions ]
-		%%% basicConstraints        = critical,CA:false
-		%%% subjectAltName          = email:copy
-		%%% nsCertType              = client,email
-		%%% extendedKeyUsage        = clientAuth,emailProtection
-		%%% keyUsage                = digitalSignature, keyEncipherment, keyAgreement
-		%%% nsComment               = "Client Broker Certificate"
-		%%% subjectKeyIdentifier    = hash
-		%%% authorityKeyIdentifier  = keyid,issuer:always
-
-!ENDClientconfig
-
-		SUBJALTNAME="$(addresslist)"
-		export SUBJALTNAME		# Use environment. Because I can. ;-)
+		generateCNFFileClientCacnf
 
 		echo "--- Creating and signing client certificate"
 		$openssl x509 -req $defaultmd \

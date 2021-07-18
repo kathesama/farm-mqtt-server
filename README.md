@@ -60,7 +60,7 @@ Params:
 
 example:
 > cd ca_certificates <br>
-> source ./generate-CA.sh client ESPSensorDev-001 '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=kathevigs/OU=generate-CA/emailAddress=kathesama@gmail.com'
+> source ./generate-CA.sh client ESPSensorDev-001 '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=kathevigs/OU=generate-CA/emailAddress=kathesama@gmail.com' pem
 
 Checking mqtt server, execute to publish
 

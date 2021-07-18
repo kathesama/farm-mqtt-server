@@ -10,7 +10,7 @@ sudo docker run --init -d \
 -v $(pwd)/config/config.d:/mosquitto/config.d \
 -v $(pwd)/log:/mosquitto/log \
 -v $(pwd)/data:/mosquitto/data \
--v $(pwd)/ca_certificates/ca.crt:/ca_certificates/ca-cert.crt \
+-v $(pwd)/ca_certificates/ca-cert.crt:/ca_certificates/ca-cert.crt \
 -v $(pwd)/ca_certificates/server_certs/$P_HOSTNAME-cert.crt:/ca_certificates/server_certs/$P_HOSTNAME-cert.crt \
 -v $(pwd)/ca_certificates/server_certs/$P_HOSTNAME-key.keys:/ca_certificates/server_certs/$P_HOSTNAME-key.keys \
 eclipse-mosquitto
