@@ -478,14 +478,20 @@ else
 		echo ""
 
 		echo "--- Creating client key and signing request"
-		op enssl req -newkey rsa:4096 -nodes -keyout $CLIENT-key.pem -out $CLIENT-req.pem -subj "${CA_DN}"
-	
-		# openssl x509 -req -in client-req.pem -days "$days" -CA ca-cert.pem -CAkey ca-key.pem -set_serial 01 -out client-cert.pem;
+		openssl req -newkey rsa:4096 -nodes -keyout $CLIENT-key.pem -out $CLIENT-req.pem -subj "${CA_DN}"
+		openssl genrsa -out private.pem 2048
+
+		sudo mv "$CLIENT-key.pem" "$CLIENT-req.pem" "client_certs/$CLIENT/"
+		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-key.pem client_certs/$CLIENT/$CLIENT-req.pem, CREATED..."
+		
+		rm -f $CNF2
+
+		echo ""		
 	else
-		if [[ "$P_CA_FORMAT" == "crt" ]]; then
-			printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-key.key and client_certs/$CLIENT/$CLIENT-req.csr, OK..."
-	  		echo ""
-		fi
+		# if [[ "$P_CA_FORMAT" == "crt" ]]; then
+		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-key and client_certs/$CLIENT/$CLIENT-req, OK..."
+		echo ""
+		# fi
 	fi
 
 	# ----------------------------------------------------------------
@@ -520,11 +526,62 @@ else
 		echo ""
 		        
         mv $CLIENT-cert.crt "client_certs/$CLIENT/"
-		cp $CACERT-cert.crt "client_certs/$CLIENT/"
+		cp $CACERT-cert.crt "client_certs/$CLIENT/"		
+
 		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-cert.crt, CREATED..."
 		echo ""
+	elif [[ ( -f "client_certs/$CLIENT/$CLIENT-req.pem" && ! -f "client_certs/$CLIENT/$CLIENT-cert.pem" && "$P_CA_FORMAT" == "pem" ) ]]; then	
+		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-req.pem OK but No client_certs/$CLIENT/$CLIENT-cert.pem, generating crt..."
+		echo ""
+
+		generateCNFFileClientCacnf
+
+		echo "--- Creating cert client and signing request .pem"		
+
+		openssl x509 -req \
+			-in client_certs/$CLIENT/$CLIENT-req.pem \
+			-CA $CACERT-cert.pem \
+			-CAkey $CACERT-key.pem \
+			-CAcreateserial \
+			-CAserial "${DIR}/ca.srl" \
+			-out $CLIENT-cert.pem \
+			-days "$days" \
+			-extfile ${CNF3} \
+			-extensions JPMclientextensions		
+
+		rm -f $CNF3
+
+		chmod 775 $CLIENT-cert.pem
+
+		printf '\e[1;33m%-6s\e[m' "Getting $CLIENT-cert.pem fingerprint"
+		echo ""
+		openssl x509 -in $CLIENT-cert.pem -noout -sha256 -fingerprint
+		echo ""
+		        
+        mv $CLIENT-cert.pem "client_certs/$CLIENT/"
+		cp $CACERT-cert.pem "client_certs/$CLIENT/"
+		cp $CACERT-cert.cer "client_certs/$CLIENT/"
+
+		cd "client_certs/$CLIENT/"
+		
+		echo $(pwd)
+		echo "step 3: convert cert.pem to cert.cer"
+		openssl x509 -in "$CLIENT-cert.pem" -out "$CLIENT-cert.der" -outform DER			
+		openssl x509 -inform der -in "$CLIENT-cert.der" -out "$CLIENT-cert.cer"
+		rm -f "$CLIENT-cert.der"
+
+		echo "step 3: convert key.pem to key.cer"
+		chmod 775 $CLIENT-key.pem
+		openssl x509 -in "$CLIENT-key.pem" -out "$CLIENT-key.der" -outform DER		
+		# openssl x509 -inform der -in "$CLIENT-key.der" -out "$CLIENT-key.cer"
+		rm -f "$CLIENT-key.der"
+
+		cd ..
+		cd ..
+
+		printf '\e[1;36m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-cert.pem, CREATED..."
 	else
-		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-cert.crt, OK..."
+		printf '\e[1;32m%-6s\e[m' "client_certs/$CLIENT/$CLIENT-cert, OK..."
 		echo ""
 	fi
 fi
