@@ -39,7 +39,7 @@ printf '\e[1;32m%-6s\e[m' "1 Setting certs..."
 echo ""
 chmod 700 ca_certificates
 cd ca_certificates || exit
-source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_ORG "\${P_IPLIST}" "\${P_HOSTLIST}" $P_CA_FORMAT
+source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_ORG "${P_IPLIST}" "${P_HOSTLIST}" $P_CA_FORMAT
 cd ..
 echo "1: done"
 
