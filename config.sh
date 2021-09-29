@@ -7,10 +7,10 @@ P_DOCKER_USER_KEY=${2:-$(< /dev/urandom tr -dc A-Z-a-z-0-9 | head -c${3:-12};ech
 P_OPTION=${3:-host}
 P_HOSTNAME=${4:-$(hostname -f)}
 P_CA_ORG=${5:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
-# P_CA_KEY=${6:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${6:-32};echo;)}
-IPLIST=${6:-$(echo "127.0.0.1")}
-HOSTLIST=${7:-$(echo "mqtt.example.com server.example.com")}
+P_IPLIST=${6:-$(echo "127.0.0.1")}
+P_HOSTLIST=${7:-$(echo "mqtt.example.com server.example.com")}
 P_CA_FORMAT=${8:-crt)}
+# P_CA_KEY=${6:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${6:-32};echo;)}
 
 echo "-----Params received-----"
 # echo "Ambient: $P_AMBIENT"
@@ -23,6 +23,8 @@ echo "Hostname got: $P_HOSTNAME"
 # echo "$P_CA_KEY"
 echo "CA_ORG values got: $P_CA_ORG"
 echo "Output format values got: $P_CA_FORMAT"
+echo "IP list: $P_IPLIST"
+echo "IP list: $P_HOSTLIST"
 echo "----------"
 
 #-------------------------------------------------------------------------------------------------
@@ -34,7 +36,7 @@ printf '\e[1;32m%-6s\e[m' "1 Configuring certs..."
 echo ""
 chmod 700 ca_certificates
 cd ca_certificates || exit
-source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_ORG $IPLIST $HOSTLIST $P_CA_FORMAT
+source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_ORG $P_IPLIST $P_HOSTLIST $P_CA_FORMAT
 cd ..
 echo "1: done"
 
