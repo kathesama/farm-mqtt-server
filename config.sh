@@ -8,7 +8,9 @@ P_OPTION=${3:-host}
 P_HOSTNAME=${4:-$(hostname -f)}
 P_CA_ORG=${5:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
 # P_CA_KEY=${6:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${6:-32};echo;)}
-P_CA_FORMAT=${6:-pem)}
+IPLIST=${6:-$(echo "127.0.0.1")}
+HOSTLIST=${7:-$(echo "mqtt.example.com server.example.com")}
+P_CA_FORMAT=${8:-crt)}
 
 echo "-----Params received-----"
 # echo "Ambient: $P_AMBIENT"
@@ -32,7 +34,7 @@ printf '\e[1;32m%-6s\e[m' "1 Configuring certs..."
 echo ""
 chmod 700 ca_certificates
 cd ca_certificates || exit
-source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_ORG $P_CA_FORMAT
+source ./generate-CA.sh $P_OPTION $P_HOSTNAME $P_CA_ORG $IPLIST $HOSTLIST $P_CA_FORMAT
 cd ..
 echo "1: done"
 
@@ -57,7 +59,8 @@ printf '\e[1;32m%-6s\e[m' "3 Creating and configuring password file for mosquitt
 echo ""
 cd config.d || exit
 sudo touch passwd
-sudo mosquitto_passwd -b passwd $P_DOCKER_USERNAME $P_DOCKER_USER_KEY
+#sudo apt-get install mosquitto mosquitto-clients -y
+#sudo mosquitto_passwd -b passwd $P_DOCKER_USERNAME $P_DOCKER_USER_KEY
 sudo chmod 775 passwd
 sudo chmod 775 password.conf
 cd ..
@@ -69,7 +72,7 @@ printf '\e[1;32m%-6s\e[m' "4 Getting mosquitto image if it not exists..."
 echo ""
 
 docker pull eclipse-mosquitto:latest
-sudo apt-get install mosquitto mosquitto-clients -y
+
 echo "4: done"
 
 #-------------------------------------------------------------------------------------------------

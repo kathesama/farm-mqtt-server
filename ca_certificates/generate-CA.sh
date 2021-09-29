@@ -52,8 +52,10 @@ echo "**********************************"
 kind=server
 P_OPTION=${1:-host}
 P_HOSTNAME=${2:-$(hostname -f)}
-CA_ORG=${3:-$(echo '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
-P_CA_FORMAT=${4:-pem)}
+CA_ORG=${3:-$(echo '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=OwnTracks.org/OU=mqtt.example.com/emailAddress=nobody@example.net')}
+IPLIST=${4:-$(echo '127.0.0.1')}
+HOSTLIST= ${5:-$(echo "mqtt.example.com server.example.com")}
+P_CA_FORMAT=${6:-pem)}
 CLIENT=""
 
 echo "Ca Cert type: $P_OPTION"
@@ -62,6 +64,8 @@ echo "Hostname got: $P_HOSTNAME"
 # echo "$P_CA_KEY"
 echo "CA_ORG values got: $CA_ORG"
 echo "Output format values got: $P_CA_FORMAT"
+echo "IP list: $IPLIST"
+echo "IP list: $HOSTLIST"
 
 if [[ $P_OPTION == "host" ]]; then
   	kind=server

@@ -20,7 +20,7 @@ Mqtt server for farm project
 
 
 execute 
-> source ./config.sh <dev|prod> <dockerUser> [dockerUserPassword] <host|client> [hostname] [caCertPassword] <CA_ORG> <P_CA_FORMAT> 
+> source ./config.sh <dev|prod> <dockerUser> [dockerUserPassword] <host|client> [hostname] [caCertPassword] <CA_ORG> <IPLIST> <HOSTLIST> <P_CA_FORMAT> 
 
 * Values with <> are required<br>
 * Values with [] are optional but **MUST BE PROVIDED** two single quotes ''
@@ -39,8 +39,10 @@ Params:
 4. 'hostname': Name related with certs generated, this indicates file name and host's name
 <!-- 6. 'caCertPassword': Ca Cert password related for security purposes, default is *a random string*  -->
 5. 'CA_ORG': this gives the remaining parameters for the CA cert config, <br>
-    > estructure **MUST BE LIKE** (default value): '/C=AR/ST=CABA/L=Buenos_Aires_Capital//O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net' 
-6. 'P_CA_FORMAT': output certs format, <crt|pem>, **by default is *pem***
+    > estructure **MUST BE LIKE** (default value): '/C=AR/ST=CABA/L=Buenos_Aires_Capital//O=server.com/OU=generate-CA/emailAddress=nobody@example.net' 
+6. 'IPLIST': IP list for hosts in double cuotes separated by blank space, "0.0.0.0 127.0.0.1 ...", **by default is *"127.0.0.1"***    
+7. 'HOSTLIST': Name list for hosts in double cuotes separated by blank space, "mqtt.server.com alternatename.server.com ...", **by default is *"mqtt.example.com server.example.com"***        
+8. 'P_CA_FORMAT': output certs format, <crt|pem>, **by default is *crt***
 
 
 example:
@@ -56,7 +58,7 @@ Params:
 2. 'clientName': Name related with certs generated, this indicates file name and host's name, by default is the server's name but it **MUST BE PROVIDED** client name
 3. 'CA_ORG': this gives the remaining parameters for the CA cert config, <br>
     > estructure **MUST BE LIKE** (default value): '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net'
-4. 'P_CA_FORMAT': output certs format, <crt|pem>, **by default is *crt***    
+5. 'P_CA_FORMAT': output certs format, <crt|pem>, **by default is *crt***    
 
 example:
 > cd ca_certificates <br>
