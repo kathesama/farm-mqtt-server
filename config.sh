@@ -7,7 +7,7 @@ P_DOCKER_USER_KEY=${2:-$(< /dev/urandom tr -dc A-Z-a-z-0-9 | head -c${3:-12};ech
 P_OPTION=${3:-host}
 P_HOSTNAME=${4:-$(hostname -f)}
 P_CA_ORG=${5:-$(echo '/O=OwnTracks.org/OU=generate-CA/emailAddress=nobody@example.net')}
-P_IPLIST=${6:-$(echo "127.0.0.1")}
+P_IPLIST=${6:-$(echo "127.0.0.1 0.0.0.1")}
 P_HOSTLIST=${7:-$(echo "mqtt.example.com server.example.com")}
 P_CA_FORMAT=${8:-crt)}
 # P_CA_KEY=${6:-$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${6:-32};echo;)}
@@ -24,7 +24,7 @@ echo "Hostname got: $P_HOSTNAME"
 echo "CA_ORG values got: $P_CA_ORG"
 echo "Output format values got: $P_CA_FORMAT"
 echo "IP list: $P_IPLIST"
-echo "IP list: $P_HOSTLIST"
+echo "Host list: $P_HOSTLIST"
 echo "----------"
 
 #-------------------------------------------------------------------------------------------------
@@ -32,7 +32,7 @@ printf "\n"
 printf '\e[1;31m%-6s\e[m' "Proceding to config: [$1]..."
 printf "\n"
 
-printf '\e[1;32m%-6s\e[m' "1 Configuring certs..."
+printf '\e[1;32m%-6s\e[m' "1 Setting certs..."
 echo ""
 chmod 700 ca_certificates
 cd ca_certificates || exit

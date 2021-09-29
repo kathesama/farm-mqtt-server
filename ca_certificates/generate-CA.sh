@@ -53,7 +53,7 @@ kind=server
 P_OPTION=${1:-host}
 P_HOSTNAME=${2:-$(hostname -f)}
 CA_ORG=${3:-$(echo '/C=AR/ST=CABA/L=Buenos_Aires_Capital/O=OwnTracks.org/OU=mqtt.example.com/emailAddress=nobody@example.net')}
-IPLIST=${4:-$(echo "127.0.0.1")}
+IPLIST=${4:-$(echo "127.0.0.1 0.0.0.0")}
 HOSTLIST=${5:-$(echo "mqtt.example.com server.example.com")}
 P_CA_FORMAT=${6:-crt)}
 CLIENT=""
