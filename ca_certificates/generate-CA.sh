@@ -65,7 +65,7 @@ echo "Hostname got: $P_HOSTNAME"
 echo "CA_ORG values got: $CA_ORG"
 echo "Output format values got: $P_CA_FORMAT"
 echo "IP list: $IPLIST"
-echo "IP list: $HOSTLIST"
+echo "Host list: $HOSTLIST"
 
 if [[ $P_OPTION == "host" ]]; then
   	kind=server
